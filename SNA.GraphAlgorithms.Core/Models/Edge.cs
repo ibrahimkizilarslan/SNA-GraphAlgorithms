@@ -6,7 +6,15 @@ using System.Threading.Tasks;
 
 namespace SNA.GraphAlgorithms.Core.Models
 {
-    internal class Edge
+    public class Edge
     {
+        public int FromNodeId { get; set; }
+        public int ToNodeId { get; set; }
+
+        // Dinamik hesaplanacak ağırlık (formülden gelecek)
+        public double Weight { get; set; }
+
+        // Grafımız yönsüz, ama istersen flag dursun
+        public bool IsDirected { get; set; } = false;
     }
 }
