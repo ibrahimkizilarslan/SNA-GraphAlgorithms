@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36717.8
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SNA.GraphAlgorithms.App", "SNA.GraphAlgorithms.App\SNA.GraphAlgorithms.App.csproj", "{5F334E78-4095-4849-AD69-916BBBEB523B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SNA.GraphAlgorithms.Core", "SNA.GraphAlgorithms.Core\SNA.GraphAlgorithms.Core.csproj", "{D4D27829-41C9-42FE-A925-5B0E73A8AC70}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SNA.GraphAlgorithms.Infrastructure", "SNA.GraphAlgorithms.Infrastructure\SNA.GraphAlgorithms.Infrastructure.csproj", "{6000B27D-0D56-4946-9AFD-B1ACD99EF490}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5F334E78-4095-4849-AD69-916BBBEB523B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F334E78-4095-4849-AD69-916BBBEB523B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F334E78-4095-4849-AD69-916BBBEB523B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F334E78-4095-4849-AD69-916BBBEB523B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4D27829-41C9-42FE-A925-5B0E73A8AC70}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4D27829-41C9-42FE-A925-5B0E73A8AC70}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4D27829-41C9-42FE-A925-5B0E73A8AC70}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4D27829-41C9-42FE-A925-5B0E73A8AC70}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6000B27D-0D56-4946-9AFD-B1ACD99EF490}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6000B27D-0D56-4946-9AFD-B1ACD99EF490}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6000B27D-0D56-4946-9AFD-B1ACD99EF490}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6000B27D-0D56-4946-9AFD-B1ACD99EF490}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5BF0B630-3F76-4F8E-8430-83C5030BE916}
+	EndGlobalSection
+EndGlobal
