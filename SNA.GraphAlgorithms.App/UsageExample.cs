@@ -30,7 +30,16 @@ namespace SNA.GraphAlgorithms.App
             var dfsResult = dfs.Execute(graph, 1);
             Console.WriteLine($"Ziyaret Sırası: {string.Join(" -> ", dfsResult)}");
 
-            // 4. CSV'den Graph yükleme örneği
+            // 4. Dijkstra Algoritması
+            DemoDijkstra(graph);
+
+            // 5. A* Algoritması (basit)
+            DemoAStar(graph);
+
+            // 6. A* Algoritması (pozisyon-based)
+            DemoAStarWithPositions();
+
+            // 7. CSV'den Graph yükleme örneği
             DemoLoadFromCsv();
         }
 
@@ -84,6 +93,120 @@ namespace SNA.GraphAlgorithms.App
             }
 
             return graph;
+        }
+
+        /// <summary>
+        /// Dijkstra algoritması demo
+        /// </summary>
+        private static void DemoDijkstra(Graph graph)
+        {
+            Console.WriteLine("\n\n=== Dijkstra's Shortest Path ===");
+            
+            var dijkstra = new Dijkstra();
+            int startNodeId = 1;
+            
+            // Algoritmayı çalıştır
+            var visitedOrder = dijkstra.Execute(graph, startNodeId);
+            
+            Console.WriteLine($"\nBaşlangıç Node: {graph.GetNode(startNodeId)?.Name} (ID:{startNodeId})");
+            Console.WriteLine($"Ziyaret Sırası: {string.Join(" -> ", visitedOrder)}");
+            
+            // Tüm node'lara olan mesafeleri göster
+            Console.WriteLine("\nTüm Node'lara Olan En Kısa Mesafeler:");
+            foreach (var node in graph.Nodes)
+            {
+                double distance = dijkstra.GetDistance(node.Id);
+                string distStr = distance == double.PositiveInfinity ? "Ulaşılamaz" : distance.ToString("F4");
+                Console.WriteLine($"  {graph.GetNode(startNodeId)?.Name} -> {node.Name}: {distStr}");
+            }
+            
+            // Belirli bir node'a yol
+            int targetId = 4;
+            var path = dijkstra.GetShortestPath(targetId);
+            Console.WriteLine($"\n{graph.GetNode(startNodeId)?.Name} -> {graph.GetNode(targetId)?.Name} En Kısa Yol:");
+            Console.WriteLine($"  {string.Join(" -> ", path.ConvertAll(id => graph.GetNode(id)?.Name ?? id.ToString()))}");
+            Console.WriteLine($"  Toplam Maliyet: {dijkstra.GetDistance(targetId):F4}");
+        }
+
+        /// <summary>
+        /// A* algoritması demo (basit)
+        /// </summary>
+        private static void DemoAStar(Graph graph)
+        {
+            Console.WriteLine("\n\n=== A* Pathfinding (Basic) ===");
+            
+            var aStar = new AStar();
+            int startNodeId = 1;
+            int targetNodeId = 4;
+            
+            // Belirli bir hedefe yol bul
+            var path = aStar.FindPath(graph, startNodeId, targetNodeId);
+            
+            Console.WriteLine($"\nBaşlangıç: {graph.GetNode(startNodeId)?.Name} (ID:{startNodeId})");
+            Console.WriteLine($"Hedef: {graph.GetNode(targetNodeId)?.Name} (ID:{targetNodeId})");
+            
+            if (path.Count > 0)
+            {
+                Console.WriteLine($"\nBulunan Yol:");
+                Console.WriteLine($"  {string.Join(" -> ", path.ConvertAll(id => graph.GetNode(id)?.Name ?? id.ToString()))}");
+                Console.WriteLine($"  Toplam Maliyet: {aStar.GetCost(targetNodeId):F4}");
+            }
+            else
+            {
+                Console.WriteLine("\nYol bulunamadı!");
+            }
+        }
+
+        /// <summary>
+        /// A* algoritması demo (pozisyon-based heuristic ile)
+        /// </summary>
+        private static void DemoAStarWithPositions()
+        {
+            Console.WriteLine("\n\n=== A* Pathfinding (Position-Based) ===");
+            
+            // Pozisyon bilgisi olan graph oluştur
+            var graph = new Graph();
+            
+            // Node'ları grid üzerinde konumlandır
+            var nodeA = new Node { Id = 1, Name = "A", X = 0, Y = 0, Activity = 5, InteractionCount = 100, ConnectionCount = 10 };
+            var nodeB = new Node { Id = 2, Name = "B", X = 1, Y = 0, Activity = 5, InteractionCount = 100, ConnectionCount = 10 };
+            var nodeC = new Node { Id = 3, Name = "C", X = 2, Y = 0, Activity = 5, InteractionCount = 100, ConnectionCount = 10 };
+            var nodeD = new Node { Id = 4, Name = "D", X = 1, Y = 1, Activity = 5, InteractionCount = 100, ConnectionCount = 10 };
+            var nodeE = new Node { Id = 5, Name = "E", X = 2, Y = 1, Activity = 5, InteractionCount = 100, ConnectionCount = 10 };
+            var nodeF = new Node { Id = 6, Name = "F", X = 2, Y = 2, Activity = 5, InteractionCount = 100, ConnectionCount = 10 };
+            
+            graph.AddNode(nodeA);
+            graph.AddNode(nodeB);
+            graph.AddNode(nodeC);
+            graph.AddNode(nodeD);
+            graph.AddNode(nodeE);
+            graph.AddNode(nodeF);
+            
+            // Bağlantılar (manuel weight ile - mesafeye göre)
+            graph.AddEdge(1, 2, 1.0); // A-B
+            graph.AddEdge(2, 3, 1.0); // B-C
+            graph.AddEdge(2, 4, 1.0); // B-D
+            graph.AddEdge(3, 5, 1.0); // C-E
+            graph.AddEdge(4, 5, 1.0); // D-E
+            graph.AddEdge(5, 6, 1.0); // E-F
+            
+            Console.WriteLine("\n2D Grid Graph:");
+            Console.WriteLine("  F(2,2)");
+            Console.WriteLine("    |");
+            Console.WriteLine("  D(1,1)-E(2,1)");
+            Console.WriteLine("    |     |");
+            Console.WriteLine("  A(0,0)-B(1,0)-C(2,0)");
+            
+            // A'dan F'ye en kısa yol
+            var aStar = new AStar();
+            var path = aStar.FindPath(graph, startNodeId: 1, targetNodeId: 6);
+            
+            Console.WriteLine($"\n{nodeA.Name} -> {nodeF.Name} En Kısa Yol:");
+            Console.WriteLine($"  {string.Join(" -> ", path.ConvertAll(id => graph.GetNode(id)?.Name ?? id.ToString()))}");
+            Console.WriteLine($"  Toplam Maliyet: {aStar.GetCost(6):F2}");
+            
+            // Euclidean distance heuristic kullanıldı
+            Console.WriteLine($"\nEuclidean Distance (heuristic): {nodeA.DistanceTo(nodeF):F2}");
         }
 
         /// <summary>
@@ -143,6 +266,39 @@ namespace SNA.GraphAlgorithms.App
             
             Console.WriteLine($"\nHesaplanan Weight: {weight:F6}");
             Console.WriteLine("\nFormül: 1 / (1 + (Activity_diff)² + (Interaction_diff)² + (Connection_diff)²)");
+        }
+
+        /// <summary>
+        /// Tüm algoritmaları karşılaştırma
+        /// </summary>
+        public static void CompareAlgorithms()
+        {
+            Console.WriteLine("\n\n=== Algoritma Karşılaştırması ===\n");
+            
+            var graph = CreateSampleGraph();
+            int startId = 1;
+            
+            Console.WriteLine($"Başlangıç Node: {graph.GetNode(startId)?.Name}\n");
+            
+            // BFS
+            var bfs = new BFS();
+            var bfsResult = bfs.Execute(graph, startId);
+            Console.WriteLine($"BFS Ziyaret Sırası: {string.Join(" -> ", bfsResult)}");
+            
+            // DFS
+            var dfs = new DFS();
+            var dfsResult = dfs.Execute(graph, startId);
+            Console.WriteLine($"DFS Ziyaret Sırası: {string.Join(" -> ", dfsResult)}");
+            
+            // Dijkstra
+            var dijkstra = new Dijkstra();
+            var dijkstraResult = dijkstra.Execute(graph, startId);
+            Console.WriteLine($"Dijkstra Ziyaret Sırası: {string.Join(" -> ", dijkstraResult)}");
+            
+            // A*
+            var aStar = new AStar();
+            var aStarResult = aStar.Execute(graph, startId);
+            Console.WriteLine($"A* Ziyaret Sırası: {string.Join(" -> ", aStarResult)}");
         }
     }
 }
