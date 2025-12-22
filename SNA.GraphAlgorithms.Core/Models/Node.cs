@@ -20,5 +20,25 @@ namespace SNA.GraphAlgorithms.Core.Models
 
         // Komşu düğümlerin Id'leri
         public List<int> Neighbors { get; set; } = new List<int>();
+
+        // A* algoritması için opsiyonel pozisyon bilgisi
+        // Eğer set edilmezse (0,0) olarak kalır
+        public double X { get; set; } = 0;
+        public double Y { get; set; } = 0;
+
+        /// <summary>
+        /// İki node arasındaki Euclidean distance'ı hesaplar
+        /// A* heuristic için kullanılır
+        /// </summary>
+        public double DistanceTo(Node other)
+        {
+            if (other == null)
+                throw new ArgumentNullException(nameof(other));
+
+            double dx = X - other.X;
+            double dy = Y - other.Y;
+            return Math.Sqrt(dx * dx + dy * dy);
+        }
     }
 }
+
