@@ -41,7 +41,121 @@ namespace SNA.GraphAlgorithms.App
 
             // 7. CSV'den Graph yükleme örneği
             DemoLoadFromCsv();
+
+            // 8. Welsh-Powell Renklendirme
+            DemoWelshPowell(graph);
+
+            // 9. Bağlı Bileşenler
+            DemoConnectedComponents(graph);
+
+            // 10. Degree Centrality
+            DemoDegreeCentrality(graph);
+
+            // 11. Graf Export
+            DemoGraphExport(graph);
         }
+
+        /// <summary>
+        /// Welsh-Powell graf renklendirme örneği
+        /// </summary>
+        private static void DemoWelshPowell(Graph graph)
+        {
+            Console.WriteLine("\n\n=== Welsh-Powell Graf Renklendirme ===");
+
+            var welshPowell = new WelshPowell();
+            welshPowell.Execute(graph, 0);
+
+            Console.WriteLine($"Kromatik Sayı (Kullanılan Renk Sayısı): {welshPowell.GetChromaticNumber()}");
+
+            var groups = welshPowell.GetColorGroups();
+            foreach (var group in groups.OrderBy(g => g.Key))
+            {
+                var nodeNames = group.Value.Select(id => graph.GetNode(id)?.Name ?? id.ToString());
+                Console.WriteLine($"Renk {group.Key}: {string.Join(", ", nodeNames)}");
+            }
+        }
+
+        /// <summary>
+        /// Bağlı bileşenler örneği
+        /// </summary>
+        private static void DemoConnectedComponents(Graph graph)
+        {
+            Console.WriteLine("\n\n=== Bağlı Bileşenler (Connected Components) ===");
+
+            var cc = new ConnectedComponents();
+            cc.Execute(graph, 0);
+
+            Console.WriteLine($"Toplam Bileşen Sayısı: {cc.GetComponentCount()}");
+            Console.WriteLine($"Graf Bağlı mı: {(cc.IsGraphConnected() ? "Evet" : "Hayır")}");
+
+            var components = cc.GetAllComponents();
+            for (int i = 0; i < components.Count; i++)
+            {
+                var nodeNames = components[i].Select(id => graph.GetNode(id)?.Name ?? id.ToString());
+                Console.WriteLine($"Bileşen {i + 1}: {string.Join(", ", nodeNames)}");
+            }
+        }
+
+        /// <summary>
+        /// Degree Centrality örneği
+        /// </summary>
+        private static void DemoDegreeCentrality(Graph graph)
+        {
+            Console.WriteLine("\n\n=== Degree Centrality (En Etkili Düğümler) ===");
+
+            var dc = new DegreeCentrality();
+            dc.Execute(graph, 0);
+
+            Console.WriteLine($"Graf Yoğunluğu: {dc.GetGraphDensity(graph):F4}");
+            Console.WriteLine($"Ortalama Merkezilik: {dc.GetAverageCentrality():F4}");
+
+            Console.WriteLine("\nEn Etkili 5 Düğüm:");
+            var topNodes = dc.GetTopNodes(5);
+            int rank = 1;
+            foreach (var (nodeId, centrality, degree) in topNodes)
+            {
+                var node = graph.GetNode(nodeId);
+                Console.WriteLine($"  #{rank}: {node?.Name} - Degree: {degree}, Centrality: {centrality:F4}");
+                rank++;
+            }
+        }
+
+        /// <summary>
+        /// Graf export örneği
+        /// </summary>
+        private static void DemoGraphExport(Graph graph)
+        {
+            Console.WriteLine("\n\n=== Graf Dışa Aktarım ===");
+
+            var exporter = new GraphExporter();
+
+            string exportDir = "exports";
+            if (!System.IO.Directory.Exists(exportDir))
+                System.IO.Directory.CreateDirectory(exportDir);
+
+            try
+            {
+                exporter.ExportToJson(graph, System.IO.Path.Combine(exportDir, "graph.json"));
+                Console.WriteLine("✓ JSON dışa aktarıldı: exports/graph.json");
+
+                exporter.ExportNodesToCsv(graph, System.IO.Path.Combine(exportDir, "nodes.csv"));
+                Console.WriteLine("✓ Nodes CSV dışa aktarıldı: exports/nodes.csv");
+
+                exporter.ExportEdgesToCsv(graph, System.IO.Path.Combine(exportDir, "edges.csv"));
+                Console.WriteLine("✓ Edges CSV dışa aktarıldı: exports/edges.csv");
+
+                exporter.ExportAdjacencyList(graph, System.IO.Path.Combine(exportDir, "adjacency_list.txt"));
+                Console.WriteLine("✓ Komşuluk listesi dışa aktarıldı: exports/adjacency_list.txt");
+
+                exporter.ExportAdjacencyMatrix(graph, System.IO.Path.Combine(exportDir, "adjacency_matrix.txt"));
+                Console.WriteLine("✓ Komşuluk matrisi dışa aktarıldı: exports/adjacency_matrix.txt");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Dışa aktarım hatası: {ex.Message}");
+            }
+        }
+        
 
         /// <summary>
         /// Manuel graph oluşturma örneği
