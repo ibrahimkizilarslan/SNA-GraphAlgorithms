@@ -7,8 +7,8 @@
 **Proje:** Proje–2  
 
 **Ekip Üyeleri:**  
-- Cihat KARATAŞ
-- İbrahim KIZILARSLAN
+- Cihat KARATAŞ 231307078
+- İbrahim KIZILARSLAN 231307045
 
 **Ekip Üyeleri:**  
 - Öğr. Gör. Yavuz Selim FATİHOĞLU
