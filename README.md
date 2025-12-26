@@ -465,8 +465,6 @@ Bu proje harici bir package kullanmamaktadır. Tamamen .NET standard library ile
 
 ---
 
----
-
 ## 🎓 Algoritma Seçim Rehberi
 
 | Senaryo | Önerilen Algoritma | Neden? |
