@@ -13,4 +13,8 @@
     <ProjectReference Include="..\SNA.GraphAlgorithms.Infrastructure\SNA.GraphAlgorithms.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="Microsoft.VisualBasic" />
+  </ItemGroup>
+
 </Project>
