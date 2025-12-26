@@ -127,3 +127,36 @@ flowchart TD
 
 ---
 
+## 3️⃣ Sınıf Yapısı ve Mimari Tasarım
+
+Uygulama katmanlı mimari ve nesne yönelimli tasarım prensiplerine uygun olarak geliştirilmiştir.
+
+### 📦 Katmanlar
+1. Presentation Layer (WinForms UI)
+2. Business Logic Layer
+3. Data Access Layer
+
+```mermaid
+classDiagram
+    class Graph
+    class Node
+    class Edge
+    class IGraphAlgorithm
+    class BFS
+    class DFS
+    class Dijkstra
+    class AStar
+    class WelshPowell
+
+    Graph --> Node
+    Graph --> Edge
+    IGraphAlgorithm <|.. BFS
+    IGraphAlgorithm <|.. DFS
+    IGraphAlgorithm <|.. Dijkstra
+    IGraphAlgorithm <|.. AStar
+    IGraphAlgorithm <|.. WelshPowell
+```
+
+---
+
+
