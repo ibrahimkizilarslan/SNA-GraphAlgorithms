@@ -39,3 +39,13 @@ Kuyruk (queue) veri yapısı kullanılarak önce en yakın komşular ziyaret edi
 
 Zaman Karmaşıklığı:
 O(V + E)
+
+flowchart TD
+    A[Başla] --> B[Başlangıç düğümünü kuyruğa ekle]
+    B --> C[Kuyruk boş mu?]
+    C -- Hayır --> D[Kuyruktan düğüm al]
+    D --> E[Düğümü ziyaret et]
+    E --> F[Komşuları kuyruğa ekle]
+    F --> C
+    C -- Evet --> G[Bitir]
+
