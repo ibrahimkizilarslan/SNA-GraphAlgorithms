@@ -159,4 +159,22 @@ classDiagram
 
 ---
 
+## 4️⃣ Dinamik Ağırlık Hesaplama
+
+Her düğüm aşağıdaki sayısal özelliklere sahiptir:
+- Aktivite
+- Etkileşim
+- Bağlantı Sayısı
+
+**Ağırlık Formülü:**
+
+$$ weight(i,j) = \frac{1}{1 + (A_i - A_j)^2 + (E_i - E_j)^2 + (B_i - B_j)^2} $$
+
+- Benzer düğümler → **yüksek ağırlık**
+- Farklı düğümler → **düşük ağırlık**
+
+Bu ağırlıklar tüm algoritmalarda kenar maliyeti olarak kullanılmıştır.
+
+---
+
 
