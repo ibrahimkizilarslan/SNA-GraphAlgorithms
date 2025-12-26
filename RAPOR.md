@@ -13,7 +13,7 @@
 **Ekip Üyeleri:**  
 - Öğr. Gör. Yavuz Selim FATİHOĞLU
 
-**Tarih:** Ocak 2026
+**Tarih:** 2 Ocak 2026
 
 ---
 
