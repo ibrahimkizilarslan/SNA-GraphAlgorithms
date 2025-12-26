@@ -84,3 +84,20 @@ flowchart TD
     E --> F[Komşuları güncelle]
     F --> D
 ```
+### 🔹 A* (A-Star) Algoritması
+
+**Amaç:**  
+Heuristic fonksiyon kullanarak hedefe daha hızlı ulaşmak.
+
+**Avantajı:**
+- Dijkstra’ya göre daha verimli
+- Hedef odaklı arama
+
+### 🔹 Bağlı Bileşenler (Connected Components)
+
+**Amaç:**  
+Graf içerisindeki ayrık toplulukları tespit etmek.
+
+**Kullanım:**
+- Sosyal grupların belirlenmesi
+
