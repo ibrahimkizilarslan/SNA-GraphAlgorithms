@@ -7,8 +7,11 @@
 **Proje:** Proje–2  
 
 **Ekip Üyeleri:**  
-- Cihat XXXXX
-- …………………
+- Cihat KARATAŞ
+- İbrahim KIZILARSLAN
+
+**Ekip Üyeleri:**  
+- Öğr. Gör. Yavuz Selim FATİHOĞLU
 
 **Tarih:** Ocak 2026
 
