@@ -101,3 +101,29 @@ Graf içerisindeki ayrık toplulukları tespit etmek.
 **Kullanım:**
 - Sosyal grupların belirlenmesi
 
+### 🔹 Degree Centrality (Merkezilik)
+
+**Amaç:**  
+En etkili (merkezi) kullanıcıların belirlenmesi.
+- Her düğümün derece sayısı hesaplanır
+- En yüksek dereceye sahip ilk 5 düğüm tablo halinde gösterilir
+
+### 🔹 Welsh–Powell Graf Renklendirme
+
+**Amaç:**  
+Komşu düğümlerin farklı renklerle boyanması.
+
+**Zaman Karmaşıklığı:**  
+O(V² + E)
+
+```mermaid
+flowchart TD
+    A[Başla] --> B[Düğümleri dereceye göre sırala]
+    B --> C[Renklendirmeye başla]
+    C --> D[Komşulara bak]
+    D --> E[Farklı renk ata]
+    E --> F[Bitir]
+```
+
+---
+
