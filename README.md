@@ -465,14 +465,6 @@ Bu proje harici bir package kullanmamaktadır. Tamamen .NET standard library ile
 
 ---
 
-## 📚 Dokümantasyon
-
-- **[REFACTORING_SUMMARY.md](REFACTORING_SUMMARY.md)** - Refactoring detayları
-- **[DIJKSTRA_ASTAR_GUIDE.md](DIJKSTRA_ASTAR_GUIDE.md)** - Dijkstra ve A* kullanım kılavuzu
-- **[UsageExample.cs](SNA.GraphAlgorithms.App/UsageExample.cs)** - Kod örnekleri
-
----
-
 ## 🎓 Algoritma Seçim Rehberi
 
 | Senaryo | Önerilen Algoritma | Neden? |
