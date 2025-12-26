@@ -177,4 +177,24 @@ Bu ağırlıklar tüm algoritmalarda kenar maliyeti olarak kullanılmıştır.
 
 ---
 
+## 5️⃣ Uygulama Arayüzü, Testler ve Sonuçlar
+
+### 🖥️ Kullanıcı Arayüzü
+- WinForms tabanlı
+- Graf canvas üzerinde çizilmektedir
+- Düğüm tıklama ile detay görüntüleme
+- Algoritmalar butonlarla tetiklenmektedir
+
+*(Ekran görüntüleri buraya eklenecektir)*
+
+### 🧪 Test Senaryoları
+
+| Test Grafı | Düğüm Sayısı | Sonuç |
+| :--- | :--- | :--- |
+| Küçük | 10–20 | Başarılı |
+| Orta | 50–100 | Başarılı |
+
+Tüm algoritmalar kabul edilebilir sürelerde çalışmıştır.
+
+---
 
