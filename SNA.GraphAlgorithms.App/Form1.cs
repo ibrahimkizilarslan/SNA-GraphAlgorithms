@@ -45,19 +45,19 @@ namespace SNA.GraphAlgorithms.App
         private Button runAlgorithmButton = null!;
         private ToolStripStatusLabel statusLabel = null!;
 
-        // Renk paleti (Welsh-Powell için)
+        // Renk paleti (Welsh-Powell için) - Modern ve canlı renkler
         private readonly Color[] colorPalette = new Color[]
         {
-            Color.FromArgb(231, 76, 60),    // Kırmızı
-            Color.FromArgb(46, 204, 113),   // Yeşil
-            Color.FromArgb(52, 152, 219),   // Mavi
-            Color.FromArgb(241, 196, 15),   // Sarı
-            Color.FromArgb(155, 89, 182),   // Mor
-            Color.FromArgb(230, 126, 34),   // Turuncu
-            Color.FromArgb(26, 188, 156),   // Turkuaz
-            Color.FromArgb(236, 240, 241),  // Açık Gri
-            Color.FromArgb(149, 165, 166),  // Gri
-            Color.FromArgb(52, 73, 94)      // Koyu Mavi
+            Color.FromArgb(255, 107, 129),  // Canlı Pembe-Kırmızı
+            Color.FromArgb(46, 213, 115),   // Neon Yeşil
+            Color.FromArgb(30, 144, 255),   // Dodger Mavi
+            Color.FromArgb(255, 215, 0),    // Altın Sarı
+            Color.FromArgb(165, 94, 234),   // Parlak Mor
+            Color.FromArgb(255, 165, 2),    // Turuncu
+            Color.FromArgb(29, 209, 161),   // Neon Turkuaz
+            Color.FromArgb(243, 156, 18),   // Kehribar
+            Color.FromArgb(0, 206, 201),    // Cyan-Turkuaz
+            Color.FromArgb(116, 185, 255)   // Açık Mavi
         };
 
         public Form1()
@@ -82,7 +82,7 @@ namespace SNA.GraphAlgorithms.App
             this.Size = new Size(1400, 900);
             this.MinimumSize = new Size(1200, 700);
             this.StartPosition = FormStartPosition.CenterScreen;
-            this.BackColor = Color.FromArgb(44, 62, 80);
+            this.BackColor = Color.FromArgb(25, 25, 40);
 
             // Ana menü
             CreateMainMenu();
@@ -103,7 +103,7 @@ namespace SNA.GraphAlgorithms.App
         private void CreateMainMenu()
         {
             var menuStrip = new MenuStrip();
-            menuStrip.BackColor = Color.FromArgb(52, 73, 94);
+            menuStrip.BackColor = Color.FromArgb(30, 30, 50);
             menuStrip.ForeColor = Color.White;
 
             // Dosya Menüsü
@@ -115,6 +115,9 @@ namespace SNA.GraphAlgorithms.App
             fileMenu.DropDownItems.Add("Tümünü Dışa Aktar", null, ExportAllClick);
             fileMenu.DropDownItems.Add(new ToolStripSeparator());
             fileMenu.DropDownItems.Add("Çıkış", null, (s, e) => Application.Exit());
+            // Dropdown öğelerini siyah yap
+            foreach (ToolStripItem item in fileMenu.DropDownItems)
+                item.ForeColor = Color.Black;
 
             // Graf Menüsü
             var graphMenu = new ToolStripMenuItem("Graf");
@@ -123,6 +126,9 @@ namespace SNA.GraphAlgorithms.App
             graphMenu.DropDownItems.Add("Grafı Temizle", null, (s, e) => ClearGraph());
             graphMenu.DropDownItems.Add("Düğüm Ekle", null, AddNodeClick);
             graphMenu.DropDownItems.Add("Kenar Ekle", null, AddEdgeClick);
+            // Dropdown öğelerini siyah yap
+            foreach (ToolStripItem item in graphMenu.DropDownItems)
+                item.ForeColor = Color.Black;
 
             // Algoritmalar Menüsü
             var algoMenu = new ToolStripMenuItem("Algoritmalar");
@@ -135,11 +141,17 @@ namespace SNA.GraphAlgorithms.App
             algoMenu.DropDownItems.Add("Welsh-Powell Renklendirme", null, (s, e) => RunAlgorithm("Welsh-Powell"));
             algoMenu.DropDownItems.Add("Bağlı Bileşenler", null, (s, e) => RunAlgorithm("Connected Components"));
             algoMenu.DropDownItems.Add("Degree Centrality", null, (s, e) => RunAlgorithm("Degree Centrality"));
+            // Dropdown öğelerini siyah yap
+            foreach (ToolStripItem item in algoMenu.DropDownItems)
+                item.ForeColor = Color.Black;
 
             // Yardım Menüsü
             var helpMenu = new ToolStripMenuItem("Yardım");
             helpMenu.ForeColor = Color.White;
             helpMenu.DropDownItems.Add("Hakkında", null, ShowAbout);
+            // Dropdown öğelerini siyah yap
+            foreach (ToolStripItem item in helpMenu.DropDownItems)
+                item.ForeColor = Color.Black;
 
             menuStrip.Items.Add(fileMenu);
             menuStrip.Items.Add(graphMenu);
@@ -156,7 +168,7 @@ namespace SNA.GraphAlgorithms.App
             {
                 Dock = DockStyle.Left,
                 Width = 280,
-                BackColor = Color.FromArgb(52, 73, 94),
+                BackColor = Color.FromArgb(35, 35, 60),
                 Padding = new Padding(10)
             };
 
@@ -176,7 +188,7 @@ namespace SNA.GraphAlgorithms.App
                 Location = new Point(10, y),
                 Size = new Size(260, 30),
                 DropDownStyle = ComboBoxStyle.DropDownList,
-                BackColor = Color.FromArgb(44, 62, 80),
+                BackColor = Color.FromArgb(45, 45, 75),
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat
             };
@@ -202,7 +214,7 @@ namespace SNA.GraphAlgorithms.App
                 Location = new Point(10, y),
                 Size = new Size(260, 30),
                 DropDownStyle = ComboBoxStyle.DropDownList,
-                BackColor = Color.FromArgb(44, 62, 80),
+                BackColor = Color.FromArgb(45, 45, 75),
                 ForeColor = Color.White
             };
             controlPanel.Controls.Add(startNodeComboBox);
@@ -217,7 +229,7 @@ namespace SNA.GraphAlgorithms.App
                 Location = new Point(10, y),
                 Size = new Size(260, 30),
                 DropDownStyle = ComboBoxStyle.DropDownList,
-                BackColor = Color.FromArgb(44, 62, 80),
+                BackColor = Color.FromArgb(45, 45, 75),
                 ForeColor = Color.White
             };
             controlPanel.Controls.Add(endNodeComboBox);
@@ -229,7 +241,7 @@ namespace SNA.GraphAlgorithms.App
                 Text = "▶ ALGORİTMAYI ÇALIŞTIR",
                 Location = new Point(10, y),
                 Size = new Size(260, 45),
-                BackColor = Color.FromArgb(46, 204, 113),
+                BackColor = Color.FromArgb(0, 200, 150),
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Font = new Font("Segoe UI", 10, FontStyle.Bold),
@@ -258,8 +270,8 @@ namespace SNA.GraphAlgorithms.App
             {
                 Location = new Point(10, y),
                 Size = new Size(260, 200),
-                BackColor = Color.FromArgb(44, 62, 80),
-                ForeColor = Color.FromArgb(236, 240, 241),
+                BackColor = Color.FromArgb(45, 45, 75),
+                ForeColor = Color.FromArgb(220, 220, 240),
                 BorderStyle = BorderStyle.None,
                 ReadOnly = true,
                 Font = new Font("Consolas", 9)
@@ -268,11 +280,11 @@ namespace SNA.GraphAlgorithms.App
             y += 220;
 
             // Hızlı Butonlar
-            var btnClear = CreateButton("🗑 Temizle", 10, y, 125, Color.FromArgb(231, 76, 60));
+            var btnClear = CreateButton("🗑 Temizle", 10, y, 125, Color.FromArgb(255, 107, 129));
             btnClear.Click += (s, e) => ClearHighlights();
             controlPanel.Controls.Add(btnClear);
 
-            var btnRefresh = CreateButton("🔄 Yenile", 145, y, 125, Color.FromArgb(52, 152, 219));
+            var btnRefresh = CreateButton("🔄 Yenile", 145, y, 125, Color.FromArgb(100, 149, 237));
             btnRefresh.Click += (s, e) => RefreshUI();
             controlPanel.Controls.Add(btnRefresh);
 
@@ -284,7 +296,7 @@ namespace SNA.GraphAlgorithms.App
             graphPanel = new Panel
             {
                 Dock = DockStyle.Fill,
-                BackColor = Color.FromArgb(30, 39, 46),
+                BackColor = Color.FromArgb(18, 18, 30),
                 BorderStyle = BorderStyle.FixedSingle
             };
 
@@ -302,7 +314,7 @@ namespace SNA.GraphAlgorithms.App
             {
                 Dock = DockStyle.Right,
                 Width = 320,
-                BackColor = Color.FromArgb(52, 73, 94),
+                BackColor = Color.FromArgb(35, 35, 60),
                 Padding = new Padding(10)
             };
 
@@ -318,8 +330,8 @@ namespace SNA.GraphAlgorithms.App
             {
                 Location = new Point(10, y),
                 Size = new Size(300, 500),
-                BackColor = Color.FromArgb(44, 62, 80),
-                ForeColor = Color.FromArgb(236, 240, 241),
+                BackColor = Color.FromArgb(45, 45, 75),
+                ForeColor = Color.FromArgb(220, 220, 240),
                 BorderStyle = BorderStyle.None,
                 Font = new Font("Consolas", 10)
             };
@@ -339,7 +351,7 @@ namespace SNA.GraphAlgorithms.App
         {
             var statusStrip = new StatusStrip
             {
-                BackColor = Color.FromArgb(44, 62, 80)
+                BackColor = Color.FromArgb(25, 25, 45)
             };
 
             statusLabel = new ToolStripStatusLabel
@@ -433,7 +445,7 @@ namespace SNA.GraphAlgorithms.App
                     highlightedPath.Contains(edge.FromNodeId) &&
                     highlightedPath.Contains(edge.ToNodeId);
 
-                Color edgeColor = isHighlighted ? Color.FromArgb(46, 204, 113) : Color.FromArgb(100, 100, 120);
+                Color edgeColor = isHighlighted ? Color.FromArgb(0, 230, 170) : Color.FromArgb(80, 80, 110);
                 float width = isHighlighted ? 3f : 1.5f;
 
                 using (var pen = new Pen(edgeColor, width))
@@ -470,14 +482,14 @@ namespace SNA.GraphAlgorithms.App
                 // Seçili veya vurgulu durumu
                 if (node.Id == selectedNodeId)
                 {
-                    using (var pen = new Pen(Color.Yellow, 4))
+                    using (var pen = new Pen(Color.FromArgb(255, 215, 0), 4))
                     {
                         g.DrawEllipse(pen, rect);
                     }
                 }
                 else if (highlightedNodes.Contains(node.Id))
                 {
-                    using (var pen = new Pen(Color.FromArgb(46, 204, 113), 3))
+                    using (var pen = new Pen(Color.FromArgb(0, 230, 170), 3))
                     {
                         g.DrawEllipse(pen, rect);
                     }
@@ -516,7 +528,7 @@ namespace SNA.GraphAlgorithms.App
             if (nodeColors.ContainsKey(nodeId))
                 return nodeColors[nodeId];
 
-            return Color.FromArgb(52, 152, 219); // Varsayılan mavi
+            return Color.FromArgb(99, 110, 230); // Varsayılan mor-mavi
         }
 
         private void CalculateNodePositions()
