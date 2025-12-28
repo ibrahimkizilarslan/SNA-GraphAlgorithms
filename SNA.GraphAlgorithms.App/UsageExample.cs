@@ -6,9 +6,9 @@ using System;
 
 namespace SNA.GraphAlgorithms.App
 {
-    /// <summary>
+    
     /// Refactor edilmiş yapının kullanım örneği
-    /// </summary>
+    
     public static class UsageExample
     {
         public static void DemoGraphAlgorithms()
@@ -55,9 +55,9 @@ namespace SNA.GraphAlgorithms.App
             DemoGraphExport(graph);
         }
 
-        /// <summary>
+        
         /// Welsh-Powell graf renklendirme örneği
-        /// </summary>
+        
         private static void DemoWelshPowell(Graph graph)
         {
             Console.WriteLine("\n\n=== Welsh-Powell Graf Renklendirme ===");
@@ -75,9 +75,9 @@ namespace SNA.GraphAlgorithms.App
             }
         }
 
-        /// <summary>
+        
         /// Bağlı bileşenler örneği
-        /// </summary>
+        
         private static void DemoConnectedComponents(Graph graph)
         {
             Console.WriteLine("\n\n=== Bağlı Bileşenler (Connected Components) ===");
@@ -96,9 +96,9 @@ namespace SNA.GraphAlgorithms.App
             }
         }
 
-        /// <summary>
+        
         /// Degree Centrality örneği
-        /// </summary>
+        
         private static void DemoDegreeCentrality(Graph graph)
         {
             Console.WriteLine("\n\n=== Degree Centrality (En Etkili Düğümler) ===");
@@ -120,9 +120,9 @@ namespace SNA.GraphAlgorithms.App
             }
         }
 
-        /// <summary>
+        
         /// Graf export örneği
-        /// </summary>
+        
         private static void DemoGraphExport(Graph graph)
         {
             Console.WriteLine("\n\n=== Graf Dışa Aktarım ===");
@@ -157,9 +157,9 @@ namespace SNA.GraphAlgorithms.App
         }
         
 
-        /// <summary>
+        
         /// Manuel graph oluşturma örneği
-        /// </summary>
+        
         private static Graph CreateSampleGraph()
         {
             var graph = new Graph();
@@ -209,9 +209,9 @@ namespace SNA.GraphAlgorithms.App
             return graph;
         }
 
-        /// <summary>
+        
         /// Dijkstra algoritması demo
-        /// </summary>
+        
         private static void DemoDijkstra(Graph graph)
         {
             Console.WriteLine("\n\n=== Dijkstra's Shortest Path ===");
@@ -242,9 +242,9 @@ namespace SNA.GraphAlgorithms.App
             Console.WriteLine($"  Toplam Maliyet: {dijkstra.GetDistance(targetId):F4}");
         }
 
-        /// <summary>
+        
         /// A* algoritması demo (basit)
-        /// </summary>
+        
         private static void DemoAStar(Graph graph)
         {
             Console.WriteLine("\n\n=== A* Pathfinding (Basic) ===");
@@ -271,9 +271,9 @@ namespace SNA.GraphAlgorithms.App
             }
         }
 
-        /// <summary>
+        
         /// A* algoritması demo (pozisyon-based heuristic ile)
-        /// </summary>
+        
         private static void DemoAStarWithPositions()
         {
             Console.WriteLine("\n\n=== A* Pathfinding (Position-Based) ===");
@@ -323,9 +323,9 @@ namespace SNA.GraphAlgorithms.App
             Console.WriteLine($"\nEuclidean Distance (heuristic): {nodeA.DistanceTo(nodeF):F2}");
         }
 
-        /// <summary>
+        
         /// CSV'den graph yükleme örneği
-        /// </summary>
+        
         private static void DemoLoadFromCsv()
         {
             Console.WriteLine("\n\n=== CSV'den Graph Yükleme ===");
@@ -360,9 +360,9 @@ namespace SNA.GraphAlgorithms.App
             }
         }
 
-        /// <summary>
+        
         /// Weight hesaplama örneği
-        /// </summary>
+        
         public static void DemoWeightCalculation()
         {
             Console.WriteLine("\n\n=== Weight Hesaplama Demo ===");
@@ -382,9 +382,9 @@ namespace SNA.GraphAlgorithms.App
             Console.WriteLine("\nFormül: 1 / (1 + (Activity_diff)² + (Interaction_diff)² + (Connection_diff)²)");
         }
 
-        /// <summary>
+        
         /// Tüm algoritmaları karşılaştırma
-        /// </summary>
+        
         public static void CompareAlgorithms()
         {
             Console.WriteLine("\n\n=== Algoritma Karşılaştırması ===\n");

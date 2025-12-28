@@ -6,16 +6,16 @@ using System.IO;
 
 namespace SNA.GraphAlgorithms.Infrastructure.FileServices
 {
-    /// <summary>
+    
     /// CSV dosyasından veri okuyarak Node listesi oluşturur
     /// SRP: Sadece CSV okuma ve Node oluşturma sorumluluğu
-    /// </summary>
+    
     public class CsvLoader
     {
-        /// <summary>
+        
         /// CSV dosyasından node'ları okur
         /// Expected CSV format: Id,Name,Activity,InteractionCount,ConnectionCount
-        /// </summary>
+        
         /// <param name="filePath">CSV dosya yolu</param>
         /// <returns>Oluşturulan node listesi</returns>
         public List<Node> LoadNodes(string filePath)
@@ -59,9 +59,9 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
             return nodes;
         }
 
-        /// <summary>
+        
         /// CSV satırından Node oluşturur
-        /// </summary>
+        
         private Node ParseNodeFromCsvLine(string line)
         {
             string[] columns = line.Split(',');
@@ -81,10 +81,10 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
             return node;
         }
 
-        /// <summary>
+        
         /// CSV'den node'ları okur ve Graph oluşturur
         /// Graph, edge'leri otomatik olarak WeightCalculator ile hesaplar
-        /// </summary>
+        
         /// <param name="filePath">CSV dosya yolu</param>
         /// <param name="createFullyConnected">Tüm node'ları birbirine bağla (tam bağlı graph)</param>
         /// <returns>Oluşturulan Graph</returns>
@@ -108,10 +108,10 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
             return graph;
         }
 
-        /// <summary>
+        
         /// Tüm node'ları birbirine bağlar (tam bağlı graph)
         /// Weight'ler otomatik olarak Graph tarafından hesaplanır
-        /// </summary>
+        
         private void CreateFullyConnectedGraph(Graph graph, List<Node> nodes)
         {
             for (int i = 0; i < nodes.Count; i++)

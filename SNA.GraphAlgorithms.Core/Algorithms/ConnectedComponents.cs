@@ -5,10 +5,10 @@ using System.Linq;
 
 namespace SNA.GraphAlgorithms.Core.Algorithms
 {
-    /// <summary>
+    
     /// Bağlı Bileşenler (Connected Components) Algoritması
     /// Graf içindeki ayrık toplulukları (disjoint communities) bulur
-    /// </summary>
+    
     public class ConnectedComponents : IGraphAlgorithm
     {
         public string Name => "Connected Components (Disjoint Communities)";
@@ -17,9 +17,9 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
         private Dictionary<int, int> nodeToComponent = new Dictionary<int, int>();
         private List<List<int>> components = new List<List<int>>();
 
-        /// <summary>
+        
         /// Bağlı bileşenleri bulur
-        /// </summary>
+        
         /// <param name="graph">Üzerinde çalışılacak graph</param>
         /// <param name="startNodeId">Kullanılmıyor (tüm graf taranır)</param>
         /// <returns>İlk bileşendeki düğümlerin ID listesi</returns>
@@ -55,9 +55,9 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
             return components.Count > 0 ? components[0] : new List<int>();
         }
 
-        /// <summary>
+        
         /// BFS ile bir bileşeni keşfeder
-        /// </summary>
+        /
         private void BFSComponent(Graph graph, int startId, HashSet<int> visited, List<int> component, int componentId)
         {
             var queue = new Queue<int>();
@@ -85,25 +85,25 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
             }
         }
 
-        /// <summary>
+        
         /// Bileşen sayısını döndürür
-        /// </summary>
+        
         public int GetComponentCount()
         {
             return components.Count;
         }
 
-        /// <summary>
+        
         /// Tüm bileşenleri döndürür
-        /// </summary>
+        
         public List<List<int>> GetAllComponents()
         {
             return components.Select(c => new List<int>(c)).ToList();
         }
 
-        /// <summary>
+        
         /// Belirli bir düğümün hangi bileşende olduğunu döndürür
-        /// </summary>
+        
         public int GetComponentId(int nodeId)
         {
             if (!nodeToComponent.ContainsKey(nodeId))
@@ -112,9 +112,9 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
             return nodeToComponent[nodeId];
         }
 
-        /// <summary>
+        
         /// En büyük bileşeni döndürür
-        /// </summary>
+        
         public List<int> GetLargestComponent()
         {
             if (components.Count == 0)
@@ -123,9 +123,9 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
             return components.OrderByDescending(c => c.Count).First();
         }
 
-        /// <summary>
+        
         /// Belirli bir bileşeni döndürür
-        /// </summary>
+        
         public List<int> GetComponent(int componentId)
         {
             if (componentId < 0 || componentId >= components.Count)
@@ -134,9 +134,9 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
             return new List<int>(components[componentId]);
         }
 
-        /// <summary>
+        
         /// İki düğümün aynı bileşende olup olmadığını kontrol eder
-        /// </summary>
+        
         public bool AreConnected(int nodeId1, int nodeId2)
         {
             if (!nodeToComponent.ContainsKey(nodeId1) || !nodeToComponent.ContainsKey(nodeId2))
@@ -145,9 +145,9 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
             return nodeToComponent[nodeId1] == nodeToComponent[nodeId2];
         }
 
-        /// <summary>
+        
         /// Grafın bağlı olup olmadığını kontrol eder
-        /// </summary>
+        
         public bool IsGraphConnected()
         {
             return components.Count == 1;

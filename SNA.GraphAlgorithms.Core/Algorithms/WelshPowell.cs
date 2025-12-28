@@ -5,10 +5,10 @@ using System.Linq;
 
 namespace SNA.GraphAlgorithms.Core.Algorithms
 {
-    /// <summary>
+    
     /// Welsh-Powell Graf Renklendirme Algoritması
     /// Greedy yaklaşımla minimum sayıda renk kullanarak graf renklendirme yapar
-    /// </summary>
+    
     public class WelshPowell : IGraphAlgorithm
     {
         public string Name => "Welsh-Powell Graph Coloring";
@@ -17,9 +17,9 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
         private Dictionary<int, int> nodeColors = new Dictionary<int, int>();
         private int chromaticNumber = 0;
 
-        /// <summary>
+        
         /// Welsh-Powell algoritmasını çalıştırır
-        /// </summary>
+        
         /// <param name="graph">Üzerinde çalışılacak graph</param>
         /// <param name="startNodeId">Kullanılmıyor (interface uyumu için)</param>
         /// <returns>Renklendirme sırasına göre düğüm ID listesi</returns>
@@ -76,10 +76,10 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
             return coloredOrder;
         }
 
-        /// <summary>
+        
         /// Belirli bir düğümün rengini döndürür
         /// Execute() çalıştırıldıktan sonra kullanılabilir
-        /// </summary>
+        
         public int GetNodeColor(int nodeId)
         {
             if (!nodeColors.ContainsKey(nodeId))
@@ -88,25 +88,25 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
             return nodeColors[nodeId];
         }
 
-        /// <summary>
+        
         /// Tüm düğüm renklerini döndürür
-        /// </summary>
+        
         public Dictionary<int, int> GetAllColors()
         {
             return new Dictionary<int, int>(nodeColors);
         }
 
-        /// <summary>
+        
         /// Kullanılan renk sayısını (kromatik sayı) döndürür
-        /// </summary>
+        
         public int GetChromaticNumber()
         {
             return chromaticNumber;
         }
 
-        /// <summary>
+        
         /// Aynı renkteki düğümleri gruplar halinde döndürür
-        /// </summary>
+        
         public Dictionary<int, List<int>> GetColorGroups()
         {
             var groups = new Dictionary<int, List<int>>();

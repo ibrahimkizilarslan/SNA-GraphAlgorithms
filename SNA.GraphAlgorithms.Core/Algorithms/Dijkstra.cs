@@ -5,10 +5,10 @@ using System.Linq;
 
 namespace SNA.GraphAlgorithms.Core.Algorithms
 {
-    /// <summary>
+    /
     /// Dijkstra's Shortest Path algoritması
     /// Weighted graph'ta bir node'dan diğer tüm node'lara en kısa yolu bulur
-    /// </summary>
+    
     public class Dijkstra : IGraphAlgorithm
     {
         public string Name => "Dijkstra's Shortest Path";
@@ -17,9 +17,9 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
         private Dictionary<int, double> distances = new Dictionary<int, double>();
         private Dictionary<int, int?> previousNodes = new Dictionary<int, int?>();
 
-        /// <summary>
+        
         /// Dijkstra algoritmasını çalıştırır
-        /// </summary>
+        
         /// <param name="graph">Üzerinde çalışılacak graph</param>
         /// <param name="startNodeId">Başlangıç düğümü ID</param>
         /// <returns>Ziyaret edilen düğümlerin ID listesi (shortest path tree sırasına göre)</returns>
@@ -107,10 +107,10 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
             return visitedOrder;
         }
 
-        /// <summary>
+        
         /// Belirli bir hedef node'a en kısa yolu döndürür
         /// Execute() çalıştırıldıktan sonra kullanılabilir
-        /// </summary>
+        
         /// <param name="targetNodeId">Hedef node ID</param>
         /// <returns>Başlangıçtan hedefe olan yol (node ID listesi)</returns>
         public List<int> GetShortestPath(int targetNodeId)
@@ -137,10 +137,10 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
             return path;
         }
 
-        /// <summary>
+        
         /// Belirli bir node'a olan en kısa mesafeyi döndürür
         /// Execute() çalıştırıldıktan sonra kullanılabilir
-        /// </summary>
+        
         public double GetDistance(int nodeId)
         {
             if (!distances.ContainsKey(nodeId))
@@ -149,9 +149,9 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
             return distances[nodeId];
         }
 
-        /// <summary>
+        
         /// Tüm mesafeleri döndürür (debugging için)
-        /// </summary>
+        
         public Dictionary<int, double> GetAllDistances()
         {
             return new Dictionary<int, double>(distances);

@@ -4,17 +4,17 @@ using System.Collections.Generic;
 
 namespace SNA.GraphAlgorithms.Core.Algorithms
 {
-    /// <summary>
+    
     /// Depth-First Search (Derinlik Öncelikli Arama) algoritması
     /// Graph üzerinde mümkün olduğunca derine iner
-    /// </summary>
+    
     public class DFS : IGraphAlgorithm
     {
         public string Name => "Depth-First Search (DFS)";
 
-        /// <summary>
+        
         /// DFS algoritmasını çalıştırır
-        /// </summary>
+        
         /// <param name="graph">Üzerinde çalışılacak graph</param>
         /// <param name="startNodeId">Başlangıç düğümü ID</param>
         /// <returns>Ziyaret edilen düğümlerin ID listesi (ziyaret sırasına göre)</returns>
@@ -38,9 +38,9 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
             return visitedOrder;
         }
 
-        /// <summary>
+        
         /// Recursive DFS helper metodu
-        /// </summary>
+        
         private void DFSRecursive(Graph graph, int currentId, HashSet<int> visited, List<int> visitedOrder)
         {
             // Node'u ziyaret et

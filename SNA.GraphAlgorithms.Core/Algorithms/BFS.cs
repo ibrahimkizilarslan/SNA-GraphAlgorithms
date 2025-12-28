@@ -4,17 +4,17 @@ using System.Collections.Generic;
 
 namespace SNA.GraphAlgorithms.Core.Algorithms
 {
-    /// <summary>
+    
     /// Breadth-First Search (Genişlik Öncelikli Arama) algoritması
     /// Graph üzerinde seviye seviye dolaşır
-    /// </summary>
+    
     public class BFS : IGraphAlgorithm
     {
         public string Name => "Breadth-First Search (BFS)";
 
-        /// <summary>
+        
         /// BFS algoritmasını çalıştırır
-        /// </summary>
+        
         /// <param name="graph">Üzerinde çalışılacak graph</param>
         /// <param name="startNodeId">Başlangıç düğümü ID</param>
         /// <returns>Ziyaret edilen düğümlerin ID listesi (ziyaret sırasına göre)</returns>

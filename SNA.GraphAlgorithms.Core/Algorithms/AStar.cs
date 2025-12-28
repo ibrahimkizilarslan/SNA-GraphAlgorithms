@@ -5,10 +5,10 @@ using System.Linq;
 
 namespace SNA.GraphAlgorithms.Core.Algorithms
 {
-    /// <summary>
+    
     /// A* (A-Star) Pathfinding algoritması
     /// Heuristic kullanarak hedef node'a en optimal yolu bulur
-    /// </summary>
+    
     public class AStar : IGraphAlgorithm
     {
         public string Name => "A* Pathfinding";
@@ -18,10 +18,10 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
         private Dictionary<int, int?> previousNodes = new Dictionary<int, int?>();
         private int? targetNodeId = null;
 
-        /// <summary>
+        
         /// A* algoritmasını çalıştırır
         /// Not: Hedef node belirtmeden çalıştırılırsa Dijkstra gibi çalışır
-        /// </summary>
+        
         /// <param name="graph">Üzerinde çalışılacak graph</param>
         /// <param name="startNodeId">Başlangıç düğümü ID</param>
         /// <returns>Ziyaret edilen düğümlerin ID listesi</returns>
@@ -37,9 +37,9 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
             return ExecuteInternal(graph, startNodeId, targetNodeId: null);
         }
 
-        /// <summary>
+        
         /// A* algoritmasını belirli bir hedefe doğru çalıştırır
-        /// </summary>
+        /
         /// <param name="graph">Üzerinde çalışılacak graph</param>
         /// <param name="startNodeId">Başlangıç düğümü ID</param>
         /// <param name="targetNodeId">Hedef düğümü ID</param>
@@ -62,9 +62,9 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
             return ReconstructPath(targetNodeId);
         }
 
-        /// <summary>
+        
         /// A* algoritmasının asıl implementasyonu
-        /// </summary>
+        
         private List<int> ExecuteInternal(Graph graph, int startNodeId, int? targetNodeId)
         {
             // Initialize
@@ -157,11 +157,11 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
             return visitedOrder;
         }
 
-        /// <summary>
+        
         /// Heuristic fonksiyonu: İki node arasındaki tahmini maliyet
         /// Euclidean distance kullanır (node'larda X,Y varsa)
         /// Yoksa node özelliklerinin benzerliğini kullanır
-        /// </summary>
+        
         private double CalculateHeuristic(Graph graph, int fromId, int toId)
         {
             var fromNode = graph.GetNode(fromId);
@@ -188,9 +188,9 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
             return totalDiff;
         }
 
-        /// <summary>
+        
         /// Hedefe olan yolu reconstruct eder
-        /// </summary>
+        
         private List<int> ReconstructPath(int targetId)
         {
             if (!previousNodes.ContainsKey(targetId))
@@ -213,9 +213,9 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
             return path;
         }
 
-        /// <summary>
+        
         /// Belirli bir node'a olan maliyeti döndürür
-        /// </summary>
+        
         public double GetCost(int nodeId)
         {
             if (!gScores.ContainsKey(nodeId))
@@ -224,9 +224,9 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
             return gScores[nodeId];
         }
 
-        /// <summary>
+        
         /// Tüm maliyetleri döndürür (debugging için)
-        /// </summary>
+        
         public Dictionary<int, double> GetAllCosts()
         {
             return new Dictionary<int, double>(gScores);

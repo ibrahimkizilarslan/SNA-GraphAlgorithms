@@ -5,11 +5,11 @@ using System.Linq;
 
 namespace SNA.GraphAlgorithms.Core.Algorithms
 {
-    /// <summary>
+    
     /// Degree Centrality Algoritması
     /// Düğümlerin merkezilik (centrality) değerlerini hesaplar
     /// En etkili düğümleri bulur
-    /// </summary>
+    
     public class DegreeCentrality : IGraphAlgorithm
     {
         public string Name => "Degree Centrality";
@@ -18,9 +18,9 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
         private Dictionary<int, double> centralityScores = new Dictionary<int, double>();
         private Dictionary<int, int> degreeValues = new Dictionary<int, int>();
 
-        /// <summary>
+        
         /// Degree Centrality algoritmasını çalıştırır
-        /// </summary>
+        
         /// <param name="graph">Üzerinde çalışılacak graph</param>
         /// <param name="startNodeId">Kullanılmıyor (tüm düğümler hesaplanır)</param>
         /// <returns>Merkezilik sırasına göre (azalan) düğüm ID listesi</returns>
@@ -56,9 +56,9 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
                 .ToList();
         }
 
-        /// <summary>
+        
         /// Belirli bir düğümün centrality değerini döndürür
-        /// </summary>
+        
         public double GetCentrality(int nodeId)
         {
             if (!centralityScores.ContainsKey(nodeId))
@@ -67,9 +67,9 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
             return centralityScores[nodeId];
         }
 
-        /// <summary>
+        
         /// Belirli bir düğümün degree değerini döndürür
-        /// </summary>
+        /
         public int GetDegree(int nodeId)
         {
             if (!degreeValues.ContainsKey(nodeId))
@@ -78,17 +78,17 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
             return degreeValues[nodeId];
         }
 
-        /// <summary>
+        
         /// Tüm centrality değerlerini döndürür
-        /// </summary>
+        
         public Dictionary<int, double> GetAllCentralities()
         {
             return new Dictionary<int, double>(centralityScores);
         }
 
-        /// <summary>
+        
         /// En yüksek centrality'ye sahip N düğümü döndürür
-        /// </summary>
+        
         /// <param name="count">Döndürülecek düğüm sayısı</param>
         public List<(int NodeId, double Centrality, int Degree)> GetTopNodes(int count = 5)
         {
@@ -99,9 +99,9 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
                 .ToList();
         }
 
-        /// <summary>
+        
         /// En düşük centrality'ye sahip N düğümü döndürür (izole düğümler)
-        /// </summary>
+        
         public List<(int NodeId, double Centrality, int Degree)> GetBottomNodes(int count = 5)
         {
             return centralityScores
@@ -111,9 +111,9 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
                 .ToList();
         }
 
-        /// <summary>
+        
         /// Ortalama centrality değerini döndürür
-        /// </summary>
+        
         public double GetAverageCentrality()
         {
             if (centralityScores.Count == 0)
@@ -122,10 +122,10 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
             return centralityScores.Values.Average();
         }
 
-        /// <summary>
+        
         /// Graf yoğunluğunu (density) hesaplar
         /// Density = 2*E / (V*(V-1))
-        /// </summary>
+        
         public double GetGraphDensity(Graph graph)
         {
             if (graph == null || graph.Nodes.Count <= 1)

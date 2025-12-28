@@ -8,15 +8,15 @@ using System.Linq;
 
 namespace SNA.GraphAlgorithms.Infrastructure.FileServices
 {
-    /// <summary>
+    
     /// Graf verilerini farklı formatlarda dışa aktarır
     /// JSON, CSV ve Adjacency Matrix formatlarını destekler
-    /// </summary>
+    
     public class GraphExporter
     {
-        /// <summary>
+        
         /// Grafı JSON formatında dışa aktarır
-        /// </summary>
+        
         /// <param name="graph">Dışa aktarılacak graf</param>
         /// <param name="filePath">Hedef dosya yolu</param>
         public void ExportToJson(Graph graph, string filePath)
@@ -65,9 +65,9 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
             File.WriteAllText(filePath, jsonString);
         }
 
-        /// <summary>
+        
         /// Graf düğümlerini CSV formatında dışa aktarır
-        /// </summary>
+        
         public void ExportNodesToCsv(Graph graph, string filePath)
         {
             if (graph == null)
@@ -86,9 +86,9 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
             File.WriteAllText(filePath, sb.ToString());
         }
 
-        /// <summary>
+        
         /// Graf kenarlarını CSV formatında dışa aktarır
-        /// </summary>
+        
         public void ExportEdgesToCsv(Graph graph, string filePath)
         {
             if (graph == null)
@@ -116,9 +116,9 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
             File.WriteAllText(filePath, sb.ToString());
         }
 
-        /// <summary>
+        
         /// Komşuluk listesini (Adjacency List) text formatında dışa aktarır
-        /// </summary>
+        
         public void ExportAdjacencyList(Graph graph, string filePath)
         {
             if (graph == null)
@@ -147,9 +147,9 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
             File.WriteAllText(filePath, sb.ToString());
         }
 
-        /// <summary>
+        /
         /// Komşuluk matrisini (Adjacency Matrix) dışa aktarır
-        /// </summary>
+        
         public void ExportAdjacencyMatrix(Graph graph, string filePath)
         {
             if (graph == null)
@@ -192,9 +192,9 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
             File.WriteAllText(filePath, sb.ToString());
         }
 
-        /// <summary>
+        
         /// Komşuluk matrisini CSV formatında dışa aktarır
-        /// </summary>
+        
         public void ExportAdjacencyMatrixCsv(Graph graph, string filePath)
         {
             if (graph == null)
@@ -224,9 +224,9 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
             File.WriteAllText(filePath, sb.ToString());
         }
 
-        /// <summary>
+        
         /// Tüm verileri tek bir klasöre dışa aktarır
-        /// </summary>
+        
         public void ExportAll(Graph graph, string directoryPath)
         {
             if (!Directory.Exists(directoryPath))
@@ -242,9 +242,9 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
             ExportAdjacencyMatrixCsv(graph, Path.Combine(directoryPath, $"adjacency_matrix_{timestamp}.csv"));
         }
 
-        /// <summary>
+        
         /// Grafın komşuluk matrisini hesaplar
-        /// </summary>
+        
         public double[,] GetAdjacencyMatrix(Graph graph)
         {
             var nodeIds = graph.Nodes.OrderBy(n => n.Id).Select(n => n.Id).ToList();
@@ -270,9 +270,9 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
             return matrix;
         }
 
-        /// <summary>
+        
         /// CSV için string escape işlemi
-        /// </summary>
+        
         private string EscapeCsv(string value)
         {
             if (string.IsNullOrEmpty(value))
