@@ -26,10 +26,10 @@ namespace SNA.GraphAlgorithms.Core.Models
         public double X { get; set; } = 0;
         public double Y { get; set; } = 0;
 
-        /// <summary>
+        
         /// İki node arasındaki Euclidean distance'ı hesaplar
         /// A* heuristic için kullanılır
-        /// </summary>
+        
         public double DistanceTo(Node other)
         {
             if (other == null)
