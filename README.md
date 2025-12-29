@@ -150,6 +150,12 @@ graph LR
 ![Bağlı Bileşenler](./assets/screenshot_3.jpg)
 *Bağlı Bileşenler*
 
+![DFS (Derinlik Öncelikli Arama)](./assets/screenshot_4.jpg)
+*DFS Sonuçları*
+
+---
+
+
 
 
 ## 🚀 Hızlı Başlangıç
