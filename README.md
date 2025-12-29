@@ -147,6 +147,9 @@ graph LR
 ![Welsh-Powell Renklendirme](./assets/screenshot_2.jpg)
 *Welsh-Powell Renklendirme*
 
+![Bağlı Bileşenler](./assets/screenshot_3.jpg)
+*Bağlı Bileşenler*
+
 
 
 ## 🚀 Hızlı Başlangıç
