@@ -144,6 +144,9 @@ graph LR
 ![Ana Ekran ve A* Algoritması](./assets/screenshot_1.jpg)
 *Ana Ekran ve A* Algoritması*
 
+![Welsh-Powell Renklendirme](./assets/screenshot_2.jpg)
+*Welsh-Powell Renklendirme*
+
 ## 🚀 Hızlı Başlangıç
 
 ### 1. Projeyi Klonla
