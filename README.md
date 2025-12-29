@@ -139,6 +139,10 @@ graph LR
 ```
 
 ---
+### Ekran Görüntüleri
+
+![Ana Ekran ve A* Algoritması](./assets/screenshot_1.jpg)
+*Ana Ekran ve A* Algoritması*
 
 ## 🚀 Hızlı Başlangıç
 
