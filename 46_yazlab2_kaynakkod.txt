@@ -1,0 +1,3729 @@
+===============================
+Form1.cs
+===============================
+using SNA.GraphAlgorithms.Core.Algorithms;
+using SNA.GraphAlgorithms.Core.Models;
+using SNA.GraphAlgorithms.Core.Services;
+using SNA.GraphAlgorithms.Infrastructure.FileServices;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.IO;
+using System.Linq;
+using System.Windows.Forms;
+
+namespace SNA.GraphAlgorithms.App
+{
+    public partial class Form1 : Form
+    {
+        // Graf ve veri yÃ¶netimi
+        private Graph graph = new Graph();
+        private CsvLoader csvLoader = new CsvLoader();
+        private GraphExporter graphExporter = new GraphExporter();
+
+        // Otomatik kayÄ±t iÃ§in dosya yolu
+        private readonly string autoSaveFilePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "SNA-GraphAlgorithms",
+            "autosave_graph.json");
+
+        // GÃ¶rselleÅŸtirme
+        private Dictionary<int, PointF> nodePositions = new Dictionary<int, PointF>();
+        private Dictionary<int, Color> nodeColors = new Dictionary<int, Color>();
+        private int? selectedNodeId = null;
+        private int? highlightedNodeId = null;
+        private List<int> highlightedPath = new List<int>();
+        private List<int> highlightedNodes = new List<int>();
+
+        // UI kontrolleri
+        private Panel graphPanel = null!;
+        private Panel controlPanel = null!;
+        private Panel resultsPanel = null!;
+        private ListBox resultListBox = null!;
+        private RichTextBox infoTextBox = null!;
+        private ComboBox algorithmComboBox = null!;
+        private ComboBox startNodeComboBox = null!;
+        private ComboBox endNodeComboBox = null!;
+        private Button runAlgorithmButton = null!;
+        private ToolStripStatusLabel statusLabel = null!;
+
+        // Renk paleti (Welsh-Powell iÃ§in) - Modern ve canlÄ± renkler
+        private readonly Color[] colorPalette = new Color[]
+        {
+            Color.FromArgb(255, 107, 129),  // CanlÄ± Pembe-KÄ±rmÄ±zÄ±
+            Color.FromArgb(46, 213, 115),   // Neon YeÅŸil
+            Color.FromArgb(30, 144, 255),   // Dodger Mavi
+            Color.FromArgb(255, 215, 0),    // AltÄ±n SarÄ±
+            Color.FromArgb(165, 94, 234),   // Parlak Mor
+            Color.FromArgb(255, 165, 2),    // Turuncu
+            Color.FromArgb(29, 209, 161),   // Neon Turkuaz
+            Color.FromArgb(243, 156, 18),   // Kehribar
+            Color.FromArgb(0, 206, 201),    // Cyan-Turkuaz
+            Color.FromArgb(116, 185, 255)   // AÃ§Ä±k Mavi
+        };
+
+        public Form1()
+        {
+            InitializeComponent();
+            SetupUI();
+            
+            // Ã–nceki oturumdan kaydedilmiÅŸ graf varsa yÃ¼kle, yoksa Ã¶rnek veri
+            if (!LoadAutoSavedGraph())
+            {
+                LoadSampleData();
+            }
+
+            // Form kapanÄ±rken otomatik kaydet
+            this.FormClosing += Form1_FormClosing;
+        }
+
+        private void SetupUI()
+        {
+            // Form ayarlarÄ±
+            this.Text = "SNA Graph Algorithms - Sosyal AÄŸ Analizi";
+            this.Size = new Size(1400, 900);
+            this.MinimumSize = new Size(1200, 700);
+            this.StartPosition = FormStartPosition.CenterScreen;
+            this.BackColor = Color.FromArgb(25, 25, 40);
+
+            // Ana menÃ¼
+            CreateMainMenu();
+
+            // Control Panel (Sol)
+            CreateControlPanel();
+
+            // Graph Panel (Orta)
+            CreateGraphPanel();
+
+            // Results Panel (SaÄŸ)
+            CreateResultsPanel();
+
+            // Status Bar
+            CreateStatusBar();
+        }
+
+        private void CreateMainMenu()
+        {
+            var menuStrip = new MenuStrip();
+            menuStrip.BackColor = Color.FromArgb(30, 30, 50);
+            menuStrip.ForeColor = Color.White;
+
+            // Dosya MenÃ¼sÃ¼
+            var fileMenu = new ToolStripMenuItem("Dosya");
+            fileMenu.ForeColor = Color.White;
+            fileMenu.DropDownItems.Add("CSV YÃ¼kle", null, LoadCsvClick);
+            fileMenu.DropDownItems.Add("JSON'a Aktar", null, ExportJsonClick);
+            fileMenu.DropDownItems.Add("CSV'ye Aktar", null, ExportCsvClick);
+            fileMenu.DropDownItems.Add("TÃ¼mÃ¼nÃ¼ DÄ±ÅŸa Aktar", null, ExportAllClick);
+            fileMenu.DropDownItems.Add(new ToolStripSeparator());
+            fileMenu.DropDownItems.Add("Ã‡Ä±kÄ±ÅŸ", null, (s, e) => Application.Exit());
+            // Dropdown Ã¶ÄŸelerini siyah yap
+            foreach (ToolStripItem item in fileMenu.DropDownItems)
+                item.ForeColor = Color.Black;
+
+            // Graf MenÃ¼sÃ¼
+            var graphMenu = new ToolStripMenuItem("Graf");
+            graphMenu.ForeColor = Color.White;
+            graphMenu.DropDownItems.Add("Ã–rnek Veri YÃ¼kle", null, (s, e) => LoadSampleData());
+            graphMenu.DropDownItems.Add("GrafÄ± Temizle", null, (s, e) => ClearGraph());
+            graphMenu.DropDownItems.Add("DÃ¼ÄŸÃ¼m Ekle", null, AddNodeClick);
+            graphMenu.DropDownItems.Add("Kenar Ekle", null, AddEdgeClick);
+            // Dropdown Ã¶ÄŸelerini siyah yap
+            foreach (ToolStripItem item in graphMenu.DropDownItems)
+                item.ForeColor = Color.Black;
+
+            // Algoritmalar MenÃ¼sÃ¼
+            var algoMenu = new ToolStripMenuItem("Algoritmalar");
+            algoMenu.ForeColor = Color.White;
+            algoMenu.DropDownItems.Add("BFS Ã‡alÄ±ÅŸtÄ±r", null, (s, e) => RunAlgorithm("BFS"));
+            algoMenu.DropDownItems.Add("DFS Ã‡alÄ±ÅŸtÄ±r", null, (s, e) => RunAlgorithm("DFS"));
+            algoMenu.DropDownItems.Add("Dijkstra Ã‡alÄ±ÅŸtÄ±r", null, (s, e) => RunAlgorithm("Dijkstra"));
+            algoMenu.DropDownItems.Add("A* Ã‡alÄ±ÅŸtÄ±r", null, (s, e) => RunAlgorithm("A*"));
+            algoMenu.DropDownItems.Add(new ToolStripSeparator());
+            algoMenu.DropDownItems.Add("Welsh-Powell Renklendirme", null, (s, e) => RunAlgorithm("Welsh-Powell"));
+            algoMenu.DropDownItems.Add("BaÄŸlÄ± BileÅŸenler", null, (s, e) => RunAlgorithm("Connected Components"));
+            algoMenu.DropDownItems.Add("Degree Centrality", null, (s, e) => RunAlgorithm("Degree Centrality"));
+            // Dropdown Ã¶ÄŸelerini siyah yap
+            foreach (ToolStripItem item in algoMenu.DropDownItems)
+                item.ForeColor = Color.Black;
+
+            // YardÄ±m MenÃ¼sÃ¼
+            var helpMenu = new ToolStripMenuItem("YardÄ±m");
+            helpMenu.ForeColor = Color.White;
+            helpMenu.DropDownItems.Add("HakkÄ±nda", null, ShowAbout);
+            // Dropdown Ã¶ÄŸelerini siyah yap
+            foreach (ToolStripItem item in helpMenu.DropDownItems)
+                item.ForeColor = Color.Black;
+
+            menuStrip.Items.Add(fileMenu);
+            menuStrip.Items.Add(graphMenu);
+            menuStrip.Items.Add(algoMenu);
+            menuStrip.Items.Add(helpMenu);
+
+            this.MainMenuStrip = menuStrip;
+            this.Controls.Add(menuStrip);
+        }
+
+        private void CreateControlPanel()
+        {
+            controlPanel = new Panel
+            {
+                Dock = DockStyle.Left,
+                Width = 280,
+                BackColor = Color.FromArgb(35, 35, 60),
+                Padding = new Padding(10)
+            };
+
+            int y = 40;
+
+            // BaÅŸlÄ±k
+            var titleLabel = CreateLabel("âš¡ ALGORÄ°TMA KONTROLÃœ", 10, y, 260, true);
+            controlPanel.Controls.Add(titleLabel);
+            y += 40;
+
+            // Algoritma seÃ§imi
+            controlPanel.Controls.Add(CreateLabel("Algoritma:", 10, y, 260));
+            y += 25;
+
+            algorithmComboBox = new ComboBox
+            {
+                Location = new Point(10, y),
+                Size = new Size(260, 30),
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                BackColor = Color.FromArgb(45, 45, 75),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat
+            };
+            algorithmComboBox.Items.AddRange(new object[] {
+                "BFS (GeniÅŸlik Ã–ncelikli)",
+                "DFS (Derinlik Ã–ncelikli)",
+                "Dijkstra (En KÄ±sa Yol)",
+                "A* (Hedefli Yol Bulma)",
+                "Welsh-Powell (Renklendirme)",
+                "BaÄŸlÄ± BileÅŸenler",
+                "Degree Centrality (En Etkili 5)"
+            });
+            algorithmComboBox.SelectedIndex = 0;
+            controlPanel.Controls.Add(algorithmComboBox);
+            y += 40;
+
+            // BaÅŸlangÄ±Ã§ dÃ¼ÄŸÃ¼mÃ¼
+            controlPanel.Controls.Add(CreateLabel("BaÅŸlangÄ±Ã§ DÃ¼ÄŸÃ¼mÃ¼:", 10, y, 260));
+            y += 25;
+
+            startNodeComboBox = new ComboBox
+            {
+                Location = new Point(10, y),
+                Size = new Size(260, 30),
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                BackColor = Color.FromArgb(45, 45, 75),
+                ForeColor = Color.White
+            };
+            controlPanel.Controls.Add(startNodeComboBox);
+            y += 40;
+
+            // Hedef dÃ¼ÄŸÃ¼mÃ¼ (A* iÃ§in)
+            controlPanel.Controls.Add(CreateLabel("Hedef DÃ¼ÄŸÃ¼mÃ¼ (A* iÃ§in):", 10, y, 260));
+            y += 25;
+
+            endNodeComboBox = new ComboBox
+            {
+                Location = new Point(10, y),
+                Size = new Size(260, 30),
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                BackColor = Color.FromArgb(45, 45, 75),
+                ForeColor = Color.White
+            };
+            controlPanel.Controls.Add(endNodeComboBox);
+            y += 50;
+
+            // Ã‡alÄ±ÅŸtÄ±r butonu
+            runAlgorithmButton = new Button
+            {
+                Text = "â–¶ ALGORÄ°TMAYI Ã‡ALIÅžTIR",
+                Location = new Point(10, y),
+                Size = new Size(260, 45),
+                BackColor = Color.FromArgb(0, 200, 150),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                Cursor = Cursors.Hand
+            };
+            runAlgorithmButton.FlatAppearance.BorderSize = 0;
+            runAlgorithmButton.Click += RunAlgorithmButton_Click;
+            controlPanel.Controls.Add(runAlgorithmButton);
+            y += 60;
+
+            // AyÄ±rÄ±cÄ±
+            var separator = new Label
+            {
+                BorderStyle = BorderStyle.Fixed3D,
+                Location = new Point(10, y),
+                Size = new Size(260, 2)
+            };
+            controlPanel.Controls.Add(separator);
+            y += 20;
+
+            // Graf Ä°statistikleri
+            controlPanel.Controls.Add(CreateLabel("ðŸ“Š GRAF Ä°STATÄ°STÄ°KLERÄ°", 10, y, 260, true));
+            y += 30;
+
+            infoTextBox = new RichTextBox
+            {
+                Location = new Point(10, y),
+                Size = new Size(260, 200),
+                BackColor = Color.FromArgb(45, 45, 75),
+                ForeColor = Color.FromArgb(220, 220, 240),
+                BorderStyle = BorderStyle.None,
+                ReadOnly = true,
+                Font = new Font("Consolas", 9)
+            };
+            controlPanel.Controls.Add(infoTextBox);
+            y += 220;
+
+            // HÄ±zlÄ± Butonlar
+            var btnClear = CreateButton("ðŸ—‘ Temizle", 10, y, 125, Color.FromArgb(255, 107, 129));
+            btnClear.Click += (s, e) => ClearHighlights();
+            controlPanel.Controls.Add(btnClear);
+
+            var btnRefresh = CreateButton("ðŸ”„ Yenile", 145, y, 125, Color.FromArgb(100, 149, 237));
+            btnRefresh.Click += (s, e) => RefreshUI();
+            controlPanel.Controls.Add(btnRefresh);
+
+            this.Controls.Add(controlPanel);
+        }
+
+        private void CreateGraphPanel()
+        {
+            graphPanel = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = Color.FromArgb(18, 18, 30),
+                BorderStyle = BorderStyle.FixedSingle
+            };
+
+            graphPanel.Paint += GraphPanel_Paint;
+            graphPanel.MouseClick += GraphPanel_MouseClick;
+            graphPanel.MouseMove += GraphPanel_MouseMove;
+            graphPanel.Resize += (s, e) => { CalculateNodePositions(); graphPanel.Invalidate(); };
+
+            this.Controls.Add(graphPanel);
+        }
+
+        private void CreateResultsPanel()
+        {
+            resultsPanel = new Panel
+            {
+                Dock = DockStyle.Right,
+                Width = 320,
+                BackColor = Color.FromArgb(35, 35, 60),
+                Padding = new Padding(10)
+            };
+
+            int y = 40;
+
+            // SonuÃ§lar BaÅŸlÄ±ÄŸÄ±
+            var resultsTitle = CreateLabel("ðŸ“‹ ALGORÄ°TMA SONUÃ‡LARI", 10, y, 300, true);
+            resultsPanel.Controls.Add(resultsTitle);
+            y += 40;
+
+            // SonuÃ§ listesi
+            resultListBox = new ListBox
+            {
+                Location = new Point(10, y),
+                Size = new Size(300, 500),
+                BackColor = Color.FromArgb(45, 45, 75),
+                ForeColor = Color.FromArgb(220, 220, 240),
+                BorderStyle = BorderStyle.None,
+                Font = new Font("Consolas", 10)
+            };
+            resultListBox.SelectedIndexChanged += ResultListBox_SelectedIndexChanged;
+            resultsPanel.Controls.Add(resultListBox);
+            y += 520;
+
+            // SonuÃ§ bilgi etiketi
+            var resultInfoLabel = CreateLabel("Bir algoritma Ã§alÄ±ÅŸtÄ±rÄ±n veya dÃ¼ÄŸÃ¼me tÄ±klayÄ±n", 10, y, 300);
+            resultInfoLabel.ForeColor = Color.FromArgb(149, 165, 166);
+            resultsPanel.Controls.Add(resultInfoLabel);
+
+            this.Controls.Add(resultsPanel);
+        }
+
+        private void CreateStatusBar()
+        {
+            var statusStrip = new StatusStrip
+            {
+                BackColor = Color.FromArgb(25, 25, 45)
+            };
+
+            statusLabel = new ToolStripStatusLabel
+            {
+                Text = "HazÄ±r | Graf yÃ¼klemek iÃ§in Dosya > CSV YÃ¼kle menÃ¼sÃ¼nÃ¼ kullanÄ±n",
+                ForeColor = Color.FromArgb(236, 240, 241)
+            };
+
+            statusStrip.Items.Add(statusLabel);
+            this.Controls.Add(statusStrip);
+        }
+
+        private Label CreateLabel(string text, int x, int y, int width, bool isBold = false)
+        {
+            return new Label
+            {
+                Text = text,
+                Location = new Point(x, y),
+                Size = new Size(width, 25),
+                ForeColor = Color.FromArgb(236, 240, 241),
+                Font = new Font("Segoe UI", isBold ? 11 : 9, isBold ? FontStyle.Bold : FontStyle.Regular)
+            };
+        }
+
+        private Button CreateButton(string text, int x, int y, int width, Color bgColor)
+        {
+            var btn = new Button
+            {
+                Text = text,
+                Location = new Point(x, y),
+                Size = new Size(width, 35),
+                BackColor = bgColor,
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                Cursor = Cursors.Hand
+            };
+            btn.FlatAppearance.BorderSize = 0;
+            return btn;
+        }
+
+        // ========== GRAF Ã‡Ä°ZÄ°MÄ° ==========
+
+        private void GraphPanel_Paint(object sender, PaintEventArgs e)
+        {
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+
+            if (graph.Nodes.Count == 0)
+            {
+                DrawEmptyMessage(e.Graphics);
+                return;
+            }
+
+            // Edge'leri Ã§iz
+            DrawEdges(e.Graphics);
+
+            // Node'larÄ± Ã§iz
+            DrawNodes(e.Graphics);
+        }
+
+        private void DrawEmptyMessage(Graphics g)
+        {
+            string message = "Graf boÅŸ\n\nDosya > CSV YÃ¼kle veya Graf > Ã–rnek Veri YÃ¼kle\nmenÃ¼lerini kullanarak graf oluÅŸturun";
+            var font = new Font("Segoe UI", 14);
+            var brush = new SolidBrush(Color.FromArgb(149, 165, 166));
+            var size = g.MeasureString(message, font);
+            float x = (graphPanel.Width - size.Width) / 2;
+            float y = (graphPanel.Height - size.Height) / 2;
+            g.DrawString(message, font, brush, x, y);
+        }
+
+        private void DrawEdges(Graphics g)
+        {
+            var drawnEdges = new HashSet<string>();
+
+            foreach (var edge in graph.Edges)
+            {
+                string key = $"{Math.Min(edge.FromNodeId, edge.ToNodeId)}-{Math.Max(edge.FromNodeId, edge.ToNodeId)}";
+                if (drawnEdges.Contains(key))
+                    continue;
+                drawnEdges.Add(key);
+
+                if (!nodePositions.ContainsKey(edge.FromNodeId) || !nodePositions.ContainsKey(edge.ToNodeId))
+                    continue;
+
+                var fromPos = nodePositions[edge.FromNodeId];
+                var toPos = nodePositions[edge.ToNodeId];
+
+                // Yol vurgulama
+                bool isHighlighted = highlightedPath.Count > 0 &&
+                    highlightedPath.Contains(edge.FromNodeId) &&
+                    highlightedPath.Contains(edge.ToNodeId);
+
+                Color edgeColor = isHighlighted ? Color.FromArgb(0, 230, 170) : Color.FromArgb(80, 80, 110);
+                float width = isHighlighted ? 3f : 1.5f;
+
+                using (var pen = new Pen(edgeColor, width))
+                {
+                    g.DrawLine(pen, fromPos, toPos);
+                }
+
+                // AÄŸÄ±rlÄ±k etiketi
+                if (edge.Weight < 1)
+                {
+                    var midPoint = new PointF((fromPos.X + toPos.X) / 2, (fromPos.Y + toPos.Y) / 2);
+                    string weightText = edge.Weight.ToString("F3");
+                    var font = new Font("Segoe UI", 7);
+                    g.DrawString(weightText, font, new SolidBrush(Color.FromArgb(149, 165, 166)), midPoint);
+                }
+            }
+        }
+
+        private void DrawNodes(Graphics g)
+        {
+            int nodeRadius = 25;
+
+            foreach (var node in graph.Nodes)
+            {
+                if (!nodePositions.ContainsKey(node.Id))
+                    continue;
+
+                var pos = nodePositions[node.Id];
+                var rect = new RectangleF(pos.X - nodeRadius, pos.Y - nodeRadius, nodeRadius * 2, nodeRadius * 2);
+
+                // Node rengi
+                Color fillColor = GetNodeColor(node.Id);
+
+                // SeÃ§ili veya vurgulu durumu
+                if (node.Id == selectedNodeId)
+                {
+                    using (var pen = new Pen(Color.FromArgb(255, 215, 0), 4))
+                    {
+                        g.DrawEllipse(pen, rect);
+                    }
+                }
+                else if (highlightedNodes.Contains(node.Id))
+                {
+                    using (var pen = new Pen(Color.FromArgb(0, 230, 170), 3))
+                    {
+                        g.DrawEllipse(pen, rect);
+                    }
+                }
+
+                // Node doldur
+                using (var brush = new SolidBrush(fillColor))
+                {
+                    g.FillEllipse(brush, rect);
+                }
+
+                // Node kenarÄ±
+                using (var pen = new Pen(Color.White, 2))
+                {
+                    g.DrawEllipse(pen, rect);
+                }
+
+                // Node ID
+                var font = new Font("Segoe UI", 10, FontStyle.Bold);
+                var textSize = g.MeasureString(node.Id.ToString(), font);
+                float textX = pos.X - textSize.Width / 2;
+                float textY = pos.Y - textSize.Height / 2;
+                g.DrawString(node.Id.ToString(), font, Brushes.White, textX, textY);
+
+                // Node ismi (altÄ±nda)
+                var nameFont = new Font("Segoe UI", 8);
+                var nameSize = g.MeasureString(node.Name, nameFont);
+                float nameX = pos.X - nameSize.Width / 2;
+                float nameY = pos.Y + nodeRadius + 5;
+                g.DrawString(node.Name, nameFont, new SolidBrush(Color.FromArgb(189, 195, 199)), nameX, nameY);
+            }
+        }
+
+        private Color GetNodeColor(int nodeId)
+        {
+            if (nodeColors.ContainsKey(nodeId))
+                return nodeColors[nodeId];
+
+            return Color.FromArgb(99, 110, 230); // VarsayÄ±lan mor-mavi
+        }
+
+        private void CalculateNodePositions()
+        {
+            nodePositions.Clear();
+
+            if (graph.Nodes.Count == 0)
+                return;
+
+            // Padding artÄ±rÄ±ldÄ± ve merkez hesaplandÄ±
+            int padding = 100;
+            int availableWidth = graphPanel.Width - (padding * 2);
+            int availableHeight = graphPanel.Height - (padding * 2);
+            int centerX = graphPanel.Width / 2;
+            int centerY = graphPanel.Height / 2;
+
+            int nodeCount = graph.Nodes.Count;
+
+            if (nodeCount == 1)
+            {
+                nodePositions[graph.Nodes[0].Id] = new PointF(centerX, centerY);
+                return;
+            }
+
+            // Dairesel yerleÅŸim - yarÄ±Ã§ap kÃ¼Ã§Ã¼ltÃ¼ldÃ¼
+            double angleStep = 2 * Math.PI / nodeCount;
+            // Min boyutu kullan ve daha kÃ¼Ã§Ã¼k bir Ã§arpan ile bÃ¶l
+            double radius = Math.Min(availableWidth, availableHeight) / 3.0;
+            
+            // Minimum yarÄ±Ã§ap kontrolÃ¼
+            if (radius < 100) radius = 100;
+            // Maksimum yarÄ±Ã§ap kontrolÃ¼ (ekrandan taÅŸmasÄ±n)
+            double maxRadius = Math.Min(graphPanel.Width, graphPanel.Height) / 2.5;
+            if (radius > maxRadius) radius = maxRadius;
+
+            for (int i = 0; i < nodeCount; i++)
+            {
+                var node = graph.Nodes[i];
+                double angle = i * angleStep - Math.PI / 2; // Ãœstten baÅŸla
+                float x = (float)(centerX + radius * Math.Cos(angle));
+                float y = (float)(centerY + radius * Math.Sin(angle));
+                nodePositions[node.Id] = new PointF(x, y);
+            }
+        }
+
+        // ========== EVENT HANDLERS ==========
+
+        private void GraphPanel_MouseClick(object sender, MouseEventArgs e)
+        {
+            int nodeRadius = 25;
+
+            foreach (var node in graph.Nodes)
+            {
+                if (!nodePositions.ContainsKey(node.Id))
+                    continue;
+
+                var pos = nodePositions[node.Id];
+                double dist = Math.Sqrt(Math.Pow(e.X - pos.X, 2) + Math.Pow(e.Y - pos.Y, 2));
+
+                if (dist <= nodeRadius)
+                {
+                    selectedNodeId = node.Id;
+                    ShowNodeDetails(node);
+                    graphPanel.Invalidate();
+                    return;
+                }
+            }
+
+            selectedNodeId = null;
+            graphPanel.Invalidate();
+        }
+
+        private void GraphPanel_MouseMove(object sender, MouseEventArgs e)
+        {
+            int nodeRadius = 25;
+            int? newHighlight = null;
+
+            foreach (var node in graph.Nodes)
+            {
+                if (!nodePositions.ContainsKey(node.Id))
+                    continue;
+
+                var pos = nodePositions[node.Id];
+                double dist = Math.Sqrt(Math.Pow(e.X - pos.X, 2) + Math.Pow(e.Y - pos.Y, 2));
+
+                if (dist <= nodeRadius)
+                {
+                    newHighlight = node.Id;
+                    break;
+                }
+            }
+
+            if (newHighlight != highlightedNodeId)
+            {
+                highlightedNodeId = newHighlight;
+                graphPanel.Invalidate();
+            }
+        }
+
+        private void ResultListBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            // SeÃ§ili sonucu vurgula
+            if (resultListBox.SelectedItem != null)
+            {
+                string item = resultListBox.SelectedItem.ToString();
+                // DÃ¼ÄŸÃ¼m ID'sini Ã§Ä±karmaya Ã§alÄ±ÅŸ
+                if (int.TryParse(item.Split(' ')[0].Replace("ID:", "").Replace(":", ""), out int nodeId))
+                {
+                    if (graph.NodeById.ContainsKey(nodeId))
+                    {
+                        selectedNodeId = nodeId;
+                        graphPanel.Invalidate();
+                    }
+                }
+            }
+        }
+
+        private void RunAlgorithmButton_Click(object sender, EventArgs e)
+        {
+            string selected = algorithmComboBox.SelectedItem?.ToString() ?? "";
+
+            if (selected.Contains("BFS"))
+                RunAlgorithm("BFS");
+            else if (selected.Contains("DFS"))
+                RunAlgorithm("DFS");
+            else if (selected.Contains("Dijkstra"))
+                RunAlgorithm("Dijkstra");
+            else if (selected.Contains("A*"))
+                RunAlgorithm("A*");
+            else if (selected.Contains("Welsh"))
+                RunAlgorithm("Welsh-Powell");
+            else if (selected.Contains("BaÄŸlÄ±"))
+                RunAlgorithm("Connected Components");
+            else if (selected.Contains("Centrality"))
+                RunAlgorithm("Degree Centrality");
+        }
+
+        // ========== ALGORÄ°TMA Ã‡ALIÅžTIRMA ==========
+
+        private void RunAlgorithm(string algorithmName)
+        {
+            if (graph.Nodes.Count == 0)
+            {
+                MessageBox.Show("Graf boÅŸ! Ã–nce veri yÃ¼kleyin.", "UyarÄ±", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                ClearHighlights();
+                resultListBox.Items.Clear();
+
+                int startId = GetSelectedStartNodeId();
+
+                switch (algorithmName)
+                {
+                    case "BFS":
+                        RunBFS(startId);
+                        break;
+                    case "DFS":
+                        RunDFS(startId);
+                        break;
+                    case "Dijkstra":
+                        RunDijkstra(startId);
+                        break;
+                    case "A*":
+                        RunAStar(startId);
+                        break;
+                    case "Welsh-Powell":
+                        RunWelshPowell();
+                        break;
+                    case "Connected Components":
+                        RunConnectedComponents();
+                        break;
+                    case "Degree Centrality":
+                        RunDegreeCentrality();
+                        break;
+                }
+
+                graphPanel.Invalidate();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Hata: {ex.Message}", "Algoritma HatasÄ±", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private int GetSelectedStartNodeId()
+        {
+            if (startNodeComboBox.SelectedItem != null)
+            {
+                string selected = startNodeComboBox.SelectedItem.ToString();
+                if (int.TryParse(selected.Split(' ')[0], out int id))
+                    return id;
+            }
+            return graph.Nodes.First().Id;
+        }
+
+        private int GetSelectedEndNodeId()
+        {
+            if (endNodeComboBox.SelectedItem != null)
+            {
+                string selected = endNodeComboBox.SelectedItem.ToString();
+                if (int.TryParse(selected.Split(' ')[0], out int id))
+                    return id;
+            }
+            return graph.Nodes.Last().Id;
+        }
+
+        private void RunBFS(int startId)
+        {
+            var bfs = new BFS();
+            var result = bfs.Execute(graph, startId);
+
+            resultListBox.Items.Add("=== BFS SonuÃ§larÄ± ===");
+            resultListBox.Items.Add($"BaÅŸlangÄ±Ã§: {graph.GetNode(startId)?.Name} (ID:{startId})");
+            resultListBox.Items.Add("");
+            resultListBox.Items.Add("Ziyaret SÄ±rasÄ±:");
+
+            foreach (int nodeId in result)
+            {
+                var node = graph.GetNode(nodeId);
+                resultListBox.Items.Add($"  {nodeId}: {node?.Name}");
+            }
+
+            highlightedPath = result;
+            highlightedNodes = result;
+            UpdateStatus($"BFS tamamlandÄ±. {result.Count} dÃ¼ÄŸÃ¼m ziyaret edildi.");
+        }
+
+        private void RunDFS(int startId)
+        {
+            var dfs = new DFS();
+            var result = dfs.Execute(graph, startId);
+
+            resultListBox.Items.Add("=== DFS SonuÃ§larÄ± ===");
+            resultListBox.Items.Add($"BaÅŸlangÄ±Ã§: {graph.GetNode(startId)?.Name} (ID:{startId})");
+            resultListBox.Items.Add("");
+            resultListBox.Items.Add("Ziyaret SÄ±rasÄ±:");
+
+            foreach (int nodeId in result)
+            {
+                var node = graph.GetNode(nodeId);
+                resultListBox.Items.Add($"  {nodeId}: {node?.Name}");
+            }
+
+            highlightedPath = result;
+            highlightedNodes = result;
+            UpdateStatus($"DFS tamamlandÄ±. {result.Count} dÃ¼ÄŸÃ¼m ziyaret edildi.");
+        }
+
+        private void RunDijkstra(int startId)
+        {
+            var dijkstra = new Dijkstra();
+            dijkstra.Execute(graph, startId);
+
+            resultListBox.Items.Add("=== Dijkstra SonuÃ§larÄ± ===");
+            resultListBox.Items.Add($"BaÅŸlangÄ±Ã§: {graph.GetNode(startId)?.Name} (ID:{startId})");
+            resultListBox.Items.Add("");
+            resultListBox.Items.Add("Mesafeler:");
+
+            foreach (var node in graph.Nodes.OrderBy(n => n.Id))
+            {
+                double dist = dijkstra.GetDistance(node.Id);
+                string distStr = dist == double.PositiveInfinity ? "âˆž" : dist.ToString("F4");
+                resultListBox.Items.Add($"  {node.Name}: {distStr}");
+            }
+
+            int endId = GetSelectedEndNodeId();
+            var path = dijkstra.GetShortestPath(endId);
+
+            resultListBox.Items.Add("");
+            resultListBox.Items.Add($"En KÄ±sa Yol ({graph.GetNode(startId)?.Name} -> {graph.GetNode(endId)?.Name}):");
+            resultListBox.Items.Add($"  {string.Join(" -> ", path.Select(id => graph.GetNode(id)?.Name))}");
+            resultListBox.Items.Add($"  Maliyet: {dijkstra.GetDistance(endId):F4}");
+
+            highlightedPath = path;
+            highlightedNodes = path;
+            UpdateStatus($"Dijkstra tamamlandÄ±. En kÄ±sa yol uzunluÄŸu: {path.Count}");
+        }
+
+        private void RunAStar(int startId)
+        {
+            int endId = GetSelectedEndNodeId();
+            var aStar = new AStar();
+            var path = aStar.FindPath(graph, startId, endId);
+
+            resultListBox.Items.Add("=== A* SonuÃ§larÄ± ===");
+            resultListBox.Items.Add($"BaÅŸlangÄ±Ã§: {graph.GetNode(startId)?.Name}");
+            resultListBox.Items.Add($"Hedef: {graph.GetNode(endId)?.Name}");
+            resultListBox.Items.Add("");
+
+            if (path.Count > 0)
+            {
+                resultListBox.Items.Add("Bulunan Yol:");
+                resultListBox.Items.Add($"  {string.Join(" -> ", path.Select(id => graph.GetNode(id)?.Name))}");
+                resultListBox.Items.Add($"  Maliyet: {aStar.GetCost(endId):F4}");
+            }
+            else
+            {
+                resultListBox.Items.Add("Yol bulunamadÄ±!");
+            }
+
+            highlightedPath = path;
+            highlightedNodes = path;
+            UpdateStatus($"A* tamamlandÄ±. Yol uzunluÄŸu: {path.Count}");
+        }
+
+        private void RunWelshPowell()
+        {
+            var welshPowell = new WelshPowell();
+            welshPowell.Execute(graph, 0);
+
+            var colors = welshPowell.GetAllColors();
+            int chromaticNumber = welshPowell.GetChromaticNumber();
+            var groups = welshPowell.GetColorGroups();
+
+            resultListBox.Items.Add("=== Welsh-Powell Renklendirme ===");
+            resultListBox.Items.Add($"Kromatik SayÄ±: {chromaticNumber}");
+            resultListBox.Items.Add("");
+
+            foreach (var group in groups.OrderBy(g => g.Key))
+            {
+                resultListBox.Items.Add($"Renk {group.Key}:");
+                foreach (int nodeId in group.Value)
+                {
+                    var node = graph.GetNode(nodeId);
+                    resultListBox.Items.Add($"  - {node?.Name} (ID:{nodeId})");
+                }
+            }
+
+            // Renkleri uygula
+            nodeColors.Clear();
+            foreach (var kvp in colors)
+            {
+                int colorIndex = (kvp.Value - 1) % colorPalette.Length;
+                nodeColors[kvp.Key] = colorPalette[colorIndex];
+            }
+
+            UpdateStatus($"Welsh-Powell tamamlandÄ±. {chromaticNumber} renk kullanÄ±ldÄ±.");
+        }
+
+        private void RunConnectedComponents()
+        {
+            var cc = new ConnectedComponents();
+            cc.Execute(graph, 0);
+
+            var components = cc.GetAllComponents();
+
+            resultListBox.Items.Add("=== BaÄŸlÄ± BileÅŸenler ===");
+            resultListBox.Items.Add($"Toplam BileÅŸen SayÄ±sÄ±: {cc.GetComponentCount()}");
+            resultListBox.Items.Add($"Graf BaÄŸlÄ± mÄ±: {(cc.IsGraphConnected() ? "Evet" : "HayÄ±r")}");
+            resultListBox.Items.Add("");
+
+            int colorIndex = 0;
+            nodeColors.Clear();
+
+            for (int i = 0; i < components.Count; i++)
+            {
+                var component = components[i];
+                resultListBox.Items.Add($"BileÅŸen {i + 1} ({component.Count} dÃ¼ÄŸÃ¼m):");
+
+                foreach (int nodeId in component)
+                {
+                    var node = graph.GetNode(nodeId);
+                    resultListBox.Items.Add($"  - {node?.Name} (ID:{nodeId})");
+                    nodeColors[nodeId] = colorPalette[colorIndex % colorPalette.Length];
+                }
+                colorIndex++;
+                resultListBox.Items.Add("");
+            }
+
+            UpdateStatus($"BaÄŸlÄ± BileÅŸenler tamamlandÄ±. {components.Count} bileÅŸen bulundu.");
+        }
+
+        private void RunDegreeCentrality()
+        {
+            var dc = new DegreeCentrality();
+            dc.Execute(graph, 0);
+
+            var topNodes = dc.GetTopNodes(5);
+
+            resultListBox.Items.Add("=== Degree Centrality ===");
+            resultListBox.Items.Add($"Ortalama Merkezilik: {dc.GetAverageCentrality():F4}");
+            resultListBox.Items.Add($"Graf YoÄŸunluÄŸu: {dc.GetGraphDensity(graph):F4}");
+            resultListBox.Items.Add("");
+            resultListBox.Items.Add("En Etkili 5 DÃ¼ÄŸÃ¼m:");
+
+            highlightedNodes.Clear();
+            foreach (var (nodeId, centrality, degree) in topNodes)
+            {
+                var node = graph.GetNode(nodeId);
+                resultListBox.Items.Add($"  #{topNodes.IndexOf((nodeId, centrality, degree)) + 1}: {node?.Name}");
+                resultListBox.Items.Add($"      Degree: {degree}, Centrality: {centrality:F4}");
+                highlightedNodes.Add(nodeId);
+            }
+
+            resultListBox.Items.Add("");
+            resultListBox.Items.Add("TÃ¼m DÃ¼ÄŸÃ¼mler (sÄ±ralÄ±):");
+
+            foreach (var node in graph.Nodes.OrderByDescending(n => dc.GetCentrality(n.Id)))
+            {
+                resultListBox.Items.Add($"  {node.Name}: {dc.GetCentrality(node.Id):F4} (degree: {dc.GetDegree(node.Id)})");
+            }
+
+            UpdateStatus($"Degree Centrality tamamlandÄ±. En etkili: {graph.GetNode(topNodes[0].NodeId)?.Name}");
+        }
+
+        // ========== YARDIMCI METODLAR ==========
+
+        private void ShowNodeDetails(Node node)
+        {
+            resultListBox.Items.Clear();
+            resultListBox.Items.Add($"=== DÃ¼ÄŸÃ¼m DetaylarÄ± ===");
+            resultListBox.Items.Add($"ID: {node.Id}");
+            resultListBox.Items.Add($"Ä°sim: {node.Name}");
+            resultListBox.Items.Add($"Aktivite: {node.Activity}");
+            resultListBox.Items.Add($"EtkileÅŸim: {node.InteractionCount}");
+            resultListBox.Items.Add($"BaÄŸlantÄ± SayÄ±sÄ±: {node.ConnectionCount}");
+            resultListBox.Items.Add($"Degree: {node.Neighbors.Count}");
+            resultListBox.Items.Add("");
+            resultListBox.Items.Add("KomÅŸular:");
+
+            foreach (int neighborId in node.Neighbors)
+            {
+                var neighbor = graph.GetNode(neighborId);
+                var edge = graph.Edges.FirstOrDefault(e => 
+                    (e.FromNodeId == node.Id && e.ToNodeId == neighborId));
+                resultListBox.Items.Add($"  -> {neighbor?.Name} (w: {edge?.Weight:F4})");
+            }
+        }
+
+        private void LoadSampleData()
+        {
+            graph = new Graph();
+
+            // Ã–rnek veriler
+            var nodes = new[]
+            {
+                new Node { Id = 1, Name = "Ali", Activity = 8.5, InteractionCount = 120, ConnectionCount = 15 },
+                new Node { Id = 2, Name = "AyÅŸe", Activity = 7.2, InteractionCount = 95, ConnectionCount = 12 },
+                new Node { Id = 3, Name = "Mehmet", Activity = 9.0, InteractionCount = 150, ConnectionCount = 18 },
+                new Node { Id = 4, Name = "Fatma", Activity = 6.8, InteractionCount = 80, ConnectionCount = 10 },
+                new Node { Id = 5, Name = "Ahmet", Activity = 7.5, InteractionCount = 110, ConnectionCount = 14 },
+                new Node { Id = 6, Name = "Zeynep", Activity = 8.2, InteractionCount = 130, ConnectionCount = 16 },
+                new Node { Id = 7, Name = "Mustafa", Activity = 6.5, InteractionCount = 75, ConnectionCount = 9 },
+                new Node { Id = 8, Name = "Elif", Activity = 9.5, InteractionCount = 160, ConnectionCount = 20 }
+            };
+
+            foreach (var node in nodes)
+                graph.AddNode(node);
+
+            // Kenar baÄŸlantÄ±larÄ±
+            graph.AddEdge(1, 2);
+            graph.AddEdge(1, 3);
+            graph.AddEdge(2, 4);
+            graph.AddEdge(2, 5);
+            graph.AddEdge(3, 4);
+            graph.AddEdge(3, 6);
+            graph.AddEdge(4, 7);
+            graph.AddEdge(5, 6);
+            graph.AddEdge(5, 8);
+            graph.AddEdge(6, 8);
+            graph.AddEdge(7, 8);
+
+            RefreshUI();
+            UpdateStatus("Ã–rnek veri yÃ¼klendi. 8 dÃ¼ÄŸÃ¼m, 11 kenar.");
+        }
+
+        private void RefreshUI()
+        {
+            // DÃ¼ÄŸÃ¼m combobox'larÄ±nÄ± gÃ¼ncelle
+            startNodeComboBox.Items.Clear();
+            endNodeComboBox.Items.Clear();
+
+            foreach (var node in graph.Nodes.OrderBy(n => n.Id))
+            {
+                string item = $"{node.Id} - {node.Name}";
+                startNodeComboBox.Items.Add(item);
+                endNodeComboBox.Items.Add(item);
+            }
+
+            if (startNodeComboBox.Items.Count > 0)
+            {
+                startNodeComboBox.SelectedIndex = 0;
+                endNodeComboBox.SelectedIndex = Math.Min(endNodeComboBox.Items.Count - 1, endNodeComboBox.Items.Count - 1);
+            }
+
+            // Ä°statistikleri gÃ¼ncelle
+            UpdateStatistics();
+
+            // Node pozisyonlarÄ±nÄ± hesapla
+            CalculateNodePositions();
+
+            // Graf panelini yeniden Ã§iz
+            graphPanel.Invalidate();
+        }
+
+        private void UpdateStatistics()
+        {
+            var stats = graph.GetStatistics();
+
+            infoTextBox.Clear();
+            infoTextBox.AppendText($"DÃ¼ÄŸÃ¼m SayÄ±sÄ±: {stats.NodeCount}\n");
+            infoTextBox.AppendText($"Kenar SayÄ±sÄ±: {stats.EdgeCount}\n");
+            infoTextBox.AppendText($"YoÄŸunluk: {stats.Density:F4}\n");
+            infoTextBox.AppendText($"Ort. Degree: {stats.AvgDegree:F2}\n");
+            infoTextBox.AppendText($"\n--- DÃ¼ÄŸÃ¼mler ---\n");
+
+            foreach (var node in graph.Nodes.OrderBy(n => n.Id))
+            {
+                infoTextBox.AppendText($"{node.Id}: {node.Name} (d:{node.Neighbors.Count})\n");
+            }
+        }
+
+        private void ClearHighlights()
+        {
+            highlightedPath.Clear();
+            highlightedNodes.Clear();
+            nodeColors.Clear();
+            graphPanel.Invalidate();
+        }
+
+        private void ClearGraph()
+        {
+            graph.Clear();
+            ClearHighlights();
+            resultListBox.Items.Clear();
+            RefreshUI();
+            UpdateStatus("Graf temizlendi.");
+        }
+
+        private void UpdateStatus(string message)
+        {
+            statusLabel.Text = message;
+        }
+
+        // ========== DOSYA Ä°ÅžLEMLERÄ° ==========
+
+        private void LoadCsvClick(object sender, EventArgs e)
+        {
+            using var dialog = new OpenFileDialog
+            {
+                Filter = "CSV DosyalarÄ±|*.csv|TÃ¼m Dosyalar|*.*",
+                Title = "CSV DosyasÄ± SeÃ§"
+            };
+
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    graph = csvLoader.LoadGraph(dialog.FileName, createFullyConnected: true);
+                    RefreshUI();
+                    UpdateStatus($"CSV yÃ¼klendi: {graph.Nodes.Count} dÃ¼ÄŸÃ¼m, {graph.Edges.Count / 2} kenar");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"CSV yÃ¼kleme hatasÄ±: {ex.Message}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void ExportJsonClick(object sender, EventArgs e)
+        {
+            using var dialog = new SaveFileDialog
+            {
+                Filter = "JSON DosyalarÄ±|*.json",
+                Title = "JSON Olarak Kaydet"
+            };
+
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    graphExporter.ExportToJson(graph, dialog.FileName);
+                    UpdateStatus($"JSON kaydedildi: {dialog.FileName}");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"DÄ±ÅŸa aktarma hatasÄ±: {ex.Message}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void ExportCsvClick(object sender, EventArgs e)
+        {
+            using var dialog = new SaveFileDialog
+            {
+                Filter = "CSV DosyalarÄ±|*.csv",
+                Title = "CSV Olarak Kaydet"
+            };
+
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    graphExporter.ExportNodesToCsv(graph, dialog.FileName);
+                    UpdateStatus($"CSV kaydedildi: {dialog.FileName}");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"DÄ±ÅŸa aktarma hatasÄ±: {ex.Message}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void ExportAllClick(object sender, EventArgs e)
+        {
+            using var dialog = new FolderBrowserDialog
+            {
+                Description = "DÄ±ÅŸa Aktarma KlasÃ¶rÃ¼ SeÃ§in"
+            };
+
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    graphExporter.ExportAll(graph, dialog.SelectedPath);
+                    UpdateStatus($"TÃ¼m dosyalar kaydedildi: {dialog.SelectedPath}");
+                    MessageBox.Show($"Dosyalar baÅŸarÄ±yla dÄ±ÅŸa aktarÄ±ldÄ±:\n{dialog.SelectedPath}", "BaÅŸarÄ±lÄ±", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"DÄ±ÅŸa aktarma hatasÄ±: {ex.Message}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void AddNodeClick(object sender, EventArgs e)
+        {
+            string input = Microsoft.VisualBasic.Interaction.InputBox(
+                "Yeni dÃ¼ÄŸÃ¼m bilgilerini girin:\nFormat: Ä°sim,Aktivite,EtkileÅŸim,BaÄŸlantÄ±\nÃ–rnek: Yeni,7.5,100,12",
+                "DÃ¼ÄŸÃ¼m Ekle",
+                "Yeni,7.5,100,12");
+
+            if (!string.IsNullOrEmpty(input))
+            {
+                try
+                {
+                    var parts = input.Split(',');
+                    int newId = graph.Nodes.Count > 0 ? graph.Nodes.Max(n => n.Id) + 1 : 1;
+
+                    var node = new Node
+                    {
+                        Id = newId,
+                        Name = parts[0].Trim(),
+                        Activity = double.Parse(parts[1].Trim()),
+                        InteractionCount = int.Parse(parts[2].Trim()),
+                        ConnectionCount = int.Parse(parts[3].Trim())
+                    };
+
+                    graph.AddNode(node);
+                    RefreshUI();
+                    UpdateStatus($"DÃ¼ÄŸÃ¼m eklendi: {node.Name} (ID:{node.Id})");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"DÃ¼ÄŸÃ¼m ekleme hatasÄ±: {ex.Message}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void AddEdgeClick(object sender, EventArgs e)
+        {
+            string input = Microsoft.VisualBasic.Interaction.InputBox(
+                "Kenar bilgilerini girin:\nFormat: KaynakID,HedefID\nÃ–rnek: 1,2",
+                "Kenar Ekle",
+                "1,2");
+
+            if (!string.IsNullOrEmpty(input))
+            {
+                try
+                {
+                    var parts = input.Split(',');
+                    int fromId = int.Parse(parts[0].Trim());
+                    int toId = int.Parse(parts[1].Trim());
+
+                    graph.AddEdge(fromId, toId);
+                    RefreshUI();
+                    UpdateStatus($"Kenar eklendi: {fromId} <-> {toId}");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Kenar ekleme hatasÄ±: {ex.Message}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void ShowAbout(object sender, EventArgs e)
+        {
+            MessageBox.Show(
+                "SNA Graph Algorithms\n\n" +
+                "Sosyal AÄŸ Analizi - Graf AlgoritmalarÄ± Projesi\n\n" +
+                "Kocaeli Ãœniversitesi\n" +
+                "YazÄ±lÄ±m GeliÅŸtirme LaboratuvarÄ±-I\n\n" +
+                "Algoritmalar:\n" +
+                "â€¢ BFS (Breadth-First Search)\n" +
+                "â€¢ DFS (Depth-First Search)\n" +
+                "â€¢ Dijkstra (En KÄ±sa Yol)\n" +
+                "â€¢ A* (Hedefli Yol Bulma)\n" +
+                "â€¢ Welsh-Powell (Graf Renklendirme)\n" +
+                "â€¢ BaÄŸlÄ± BileÅŸenler\n" +
+                "â€¢ Degree Centrality",
+                "HakkÄ±nda",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+
+        // ========== OTOMATÄ°K KAYIT/YÃœKLEME ==========
+
+        /// <summary>
+        /// Form kapanÄ±rken grafÄ± otomatik kaydet
+        /// </summary>
+        private void Form1_FormClosing(object? sender, FormClosingEventArgs e)
+        {
+            AutoSaveGraph();
+        }
+
+        /// <summary>
+        /// Ã–nceki oturumdan kaydedilmiÅŸ grafÄ± yÃ¼kler
+        /// </summary>
+        private bool LoadAutoSavedGraph()
+        {
+            try
+            {
+                if (!File.Exists(autoSaveFilePath))
+                    return false;
+
+                string jsonContent = File.ReadAllText(autoSaveFilePath);
+                var graphData = System.Text.Json.JsonSerializer.Deserialize<AutoSaveData>(jsonContent);
+
+                if (graphData == null || graphData.Nodes == null || graphData.Nodes.Count == 0)
+                    return false;
+
+                graph = new Graph();
+
+                // Node'larÄ± yÃ¼kle
+                foreach (var nodeData in graphData.Nodes)
+                {
+                    var node = new Node
+                    {
+                        Id = nodeData.Id,
+                        Name = nodeData.Name,
+                        Activity = nodeData.Activity,
+                        InteractionCount = nodeData.InteractionCount,
+                        ConnectionCount = nodeData.ConnectionCount,
+                        X = nodeData.X,
+                        Y = nodeData.Y
+                    };
+                    graph.AddNode(node);
+                }
+
+                // Edge'leri yÃ¼kle
+                if (graphData.Edges != null)
+                {
+                    foreach (var edgeData in graphData.Edges)
+                    {
+                        graph.AddEdge(edgeData.FromNodeId, edgeData.ToNodeId, edgeData.Weight, false);
+                    }
+                }
+
+                RefreshUI();
+                UpdateStatus("Ã–nceki oturumdan graf yÃ¼klendi.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Auto-load hatasÄ±: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// GrafÄ± otomatik olarak dosyaya kaydeder
+        /// </summary>
+        private void AutoSaveGraph()
+        {
+            try
+            {
+                if (graph.Nodes.Count == 0)
+                    return;
+
+                // KlasÃ¶rÃ¼ oluÅŸtur
+                string? directory = Path.GetDirectoryName(autoSaveFilePath);
+                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                    Directory.CreateDirectory(directory);
+
+                var saveData = new AutoSaveData
+                {
+                    Nodes = graph.Nodes.Select(n => new NodeData
+                    {
+                        Id = n.Id,
+                        Name = n.Name,
+                        Activity = n.Activity,
+                        InteractionCount = n.InteractionCount,
+                        ConnectionCount = n.ConnectionCount,
+                        X = n.X,
+                        Y = n.Y
+                    }).ToList(),
+                    Edges = graph.Edges
+                        .Where(e => e.FromNodeId < e.ToNodeId)
+                        .Select(e => new EdgeData
+                        {
+                            FromNodeId = e.FromNodeId,
+                            ToNodeId = e.ToNodeId,
+                            Weight = e.Weight
+                        }).ToList(),
+                    SaveDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                };
+
+                var options = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
+                string jsonString = System.Text.Json.JsonSerializer.Serialize(saveData, options);
+                File.WriteAllText(autoSaveFilePath, jsonString);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Auto-save hatasÄ±: {ex.Message}");
+            }
+        }
+
+        // Otomatik kayÄ±t iÃ§in veri sÄ±nÄ±flarÄ±
+        private class AutoSaveData
+        {
+            public List<NodeData> Nodes { get; set; } = new List<NodeData>();
+            public List<EdgeData> Edges { get; set; } = new List<EdgeData>();
+            public string SaveDate { get; set; } = "";
+        }
+
+        private class NodeData
+        {
+            public int Id { get; set; }
+            public string Name { get; set; } = "";
+            public double Activity { get; set; }
+            public int InteractionCount { get; set; }
+            public int ConnectionCount { get; set; }
+            public double X { get; set; }
+            public double Y { get; set; }
+        }
+
+        private class EdgeData
+        {
+            public int FromNodeId { get; set; }
+            public int ToNodeId { get; set; }
+            public double Weight { get; set; }
+        }
+    }
+}
+
+
+
+===============================
+Form1.Designer.cs
+===============================
+namespace SNA.GraphAlgorithms.App
+{
+    partial class Form1
+    {
+        
+        ///  Required designer variable.
+        
+        private System.ComponentModel.IContainer components = null;
+
+        
+        ///  Clean up any resources being used.
+        
+        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        #region Windows Form Designer generated code
+
+        /// <summary>
+        ///  Required method for Designer support - do not modify
+        ///  the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
+            this.components = new System.ComponentModel.Container();
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Text = "Form1";
+        }
+
+        #endregion
+    }
+}
+
+
+===============================
+Program.cs
+===============================
+namespace SNA.GraphAlgorithms.App
+{
+    internal static class Program
+    {
+        
+        ///  The main entry point for the application.
+        
+        [STAThread]
+        static void Main()
+        {
+            // To customize application configuration such as set high DPI settings or default font,
+            // see https://aka.ms/applicationconfiguration.
+            ApplicationConfiguration.Initialize();
+            Application.Run(new Form1());
+        }
+    }
+}
+
+
+===============================
+UsageExample.cs
+===============================
+using SNA.GraphAlgorithms.Core.Algorithms;
+using SNA.GraphAlgorithms.Core.Models;
+using SNA.GraphAlgorithms.Core.Services;
+using SNA.GraphAlgorithms.Infrastructure.FileServices;
+using System;
+
+namespace SNA.GraphAlgorithms.App
+{
+    
+    /// Refactor edilmiÅŸ yapÄ±nÄ±n kullanÄ±m Ã¶rneÄŸi
+    
+    public static class UsageExample
+    {
+        public static void DemoGraphAlgorithms()
+        {
+            Console.WriteLine("=== Graph Algorithm Demo ===\n");
+
+            // 1. Manuel Graph oluÅŸturma
+            var graph = CreateSampleGraph();
+
+            // 2. BFS AlgoritmasÄ±
+            IGraphAlgorithm bfs = new BFS();
+            Console.WriteLine($"\n--- {bfs.Name} ---");
+            var bfsResult = bfs.Execute(graph, 1);
+            Console.WriteLine($"Ziyaret SÄ±rasÄ±: {string.Join(" -> ", bfsResult)}");
+
+            // 3. DFS AlgoritmasÄ±
+            IGraphAlgorithm dfs = new DFS();
+            Console.WriteLine($"\n--- {dfs.Name} ---");
+            var dfsResult = dfs.Execute(graph, 1);
+            Console.WriteLine($"Ziyaret SÄ±rasÄ±: {string.Join(" -> ", dfsResult)}");
+
+            // 4. Dijkstra AlgoritmasÄ±
+            DemoDijkstra(graph);
+
+            // 5. A* AlgoritmasÄ± (basit)
+            DemoAStar(graph);
+
+            // 6. A* AlgoritmasÄ± (pozisyon-based)
+            DemoAStarWithPositions();
+
+            // 7. CSV'den Graph yÃ¼kleme Ã¶rneÄŸi
+            DemoLoadFromCsv();
+
+            // 8. Welsh-Powell Renklendirme
+            DemoWelshPowell(graph);
+
+            // 9. BaÄŸlÄ± BileÅŸenler
+            DemoConnectedComponents(graph);
+
+            // 10. Degree Centrality
+            DemoDegreeCentrality(graph);
+
+            // 11. Graf Export
+            DemoGraphExport(graph);
+        }
+
+        
+        /// Welsh-Powell graf renklendirme Ã¶rneÄŸi
+        
+        private static void DemoWelshPowell(Graph graph)
+        {
+            Console.WriteLine("\n\n=== Welsh-Powell Graf Renklendirme ===");
+
+            var welshPowell = new WelshPowell();
+            welshPowell.Execute(graph, 0);
+
+            Console.WriteLine($"Kromatik SayÄ± (KullanÄ±lan Renk SayÄ±sÄ±): {welshPowell.GetChromaticNumber()}");
+
+            var groups = welshPowell.GetColorGroups();
+            foreach (var group in groups.OrderBy(g => g.Key))
+            {
+                var nodeNames = group.Value.Select(id => graph.GetNode(id)?.Name ?? id.ToString());
+                Console.WriteLine($"Renk {group.Key}: {string.Join(", ", nodeNames)}");
+            }
+        }
+
+        
+        /// BaÄŸlÄ± bileÅŸenler Ã¶rneÄŸi
+        
+        private static void DemoConnectedComponents(Graph graph)
+        {
+            Console.WriteLine("\n\n=== BaÄŸlÄ± BileÅŸenler (Connected Components) ===");
+
+            var cc = new ConnectedComponents();
+            cc.Execute(graph, 0);
+
+            Console.WriteLine($"Toplam BileÅŸen SayÄ±sÄ±: {cc.GetComponentCount()}");
+            Console.WriteLine($"Graf BaÄŸlÄ± mÄ±: {(cc.IsGraphConnected() ? "Evet" : "HayÄ±r")}");
+
+            var components = cc.GetAllComponents();
+            for (int i = 0; i < components.Count; i++)
+            {
+                var nodeNames = components[i].Select(id => graph.GetNode(id)?.Name ?? id.ToString());
+                Console.WriteLine($"BileÅŸen {i + 1}: {string.Join(", ", nodeNames)}");
+            }
+        }
+
+        
+        /// Degree Centrality Ã¶rneÄŸi
+        
+        private static void DemoDegreeCentrality(Graph graph)
+        {
+            Console.WriteLine("\n\n=== Degree Centrality (En Etkili DÃ¼ÄŸÃ¼mler) ===");
+
+            var dc = new DegreeCentrality();
+            dc.Execute(graph, 0);
+
+            Console.WriteLine($"Graf YoÄŸunluÄŸu: {dc.GetGraphDensity(graph):F4}");
+            Console.WriteLine($"Ortalama Merkezilik: {dc.GetAverageCentrality():F4}");
+
+            Console.WriteLine("\nEn Etkili 5 DÃ¼ÄŸÃ¼m:");
+            var topNodes = dc.GetTopNodes(5);
+            int rank = 1;
+            foreach (var (nodeId, centrality, degree) in topNodes)
+            {
+                var node = graph.GetNode(nodeId);
+                Console.WriteLine($"  #{rank}: {node?.Name} - Degree: {degree}, Centrality: {centrality:F4}");
+                rank++;
+            }
+        }
+
+        
+        /// Graf export Ã¶rneÄŸi
+        
+        private static void DemoGraphExport(Graph graph)
+        {
+            Console.WriteLine("\n\n=== Graf DÄ±ÅŸa AktarÄ±m ===");
+
+            var exporter = new GraphExporter();
+
+            string exportDir = "exports";
+            if (!System.IO.Directory.Exists(exportDir))
+                System.IO.Directory.CreateDirectory(exportDir);
+
+            try
+            {
+                exporter.ExportToJson(graph, System.IO.Path.Combine(exportDir, "graph.json"));
+                Console.WriteLine("âœ“ JSON dÄ±ÅŸa aktarÄ±ldÄ±: exports/graph.json");
+
+                exporter.ExportNodesToCsv(graph, System.IO.Path.Combine(exportDir, "nodes.csv"));
+                Console.WriteLine("âœ“ Nodes CSV dÄ±ÅŸa aktarÄ±ldÄ±: exports/nodes.csv");
+
+                exporter.ExportEdgesToCsv(graph, System.IO.Path.Combine(exportDir, "edges.csv"));
+                Console.WriteLine("âœ“ Edges CSV dÄ±ÅŸa aktarÄ±ldÄ±: exports/edges.csv");
+
+                exporter.ExportAdjacencyList(graph, System.IO.Path.Combine(exportDir, "adjacency_list.txt"));
+                Console.WriteLine("âœ“ KomÅŸuluk listesi dÄ±ÅŸa aktarÄ±ldÄ±: exports/adjacency_list.txt");
+
+                exporter.ExportAdjacencyMatrix(graph, System.IO.Path.Combine(exportDir, "adjacency_matrix.txt"));
+                Console.WriteLine("âœ“ KomÅŸuluk matrisi dÄ±ÅŸa aktarÄ±ldÄ±: exports/adjacency_matrix.txt");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"DÄ±ÅŸa aktarÄ±m hatasÄ±: {ex.Message}");
+            }
+        }
+        
+
+        
+        /// Manuel graph oluÅŸturma Ã¶rneÄŸi
+        
+        private static Graph CreateSampleGraph()
+        {
+            var graph = new Graph();
+
+            // Node'larÄ± oluÅŸtur
+            var node1 = new Node { Id = 1, Name = "Ali", Activity = 8.5, InteractionCount = 120, ConnectionCount = 15 };
+            var node2 = new Node { Id = 2, Name = "AyÅŸe", Activity = 7.2, InteractionCount = 95, ConnectionCount = 12 };
+            var node3 = new Node { Id = 3, Name = "Mehmet", Activity = 9.0, InteractionCount = 150, ConnectionCount = 18 };
+            var node4 = new Node { Id = 4, Name = "Fatma", Activity = 6.8, InteractionCount = 80, ConnectionCount = 10 };
+
+            // Graph'a ekle
+            graph.AddNode(node1);
+            graph.AddNode(node2);
+            graph.AddNode(node3);
+            graph.AddNode(node4);
+
+            // Edge'leri ekle (WeightCalculator otomatik hesaplar)
+            graph.AddEdge(1, 2); // Ali <-> AyÅŸe
+            graph.AddEdge(1, 3); // Ali <-> Mehmet
+            graph.AddEdge(2, 4); // AyÅŸe <-> Fatma
+            graph.AddEdge(3, 4); // Mehmet <-> Fatma
+
+            Console.WriteLine("\n=== OluÅŸturulan Graph ===");
+            Console.WriteLine($"Node SayÄ±sÄ±: {graph.Nodes.Count}");
+            Console.WriteLine($"Edge SayÄ±sÄ±: {graph.Edges.Count / 2}"); // Undirected, bu yÃ¼zden 2'ye bÃ¶l
+            
+            Console.WriteLine("\nNode DetaylarÄ±:");
+            foreach (var node in graph.Nodes)
+            {
+                Console.WriteLine($"  {node.Name} (ID:{node.Id}) - Activity:{node.Activity}, Interactions:{node.InteractionCount}, Connections:{node.ConnectionCount}");
+            }
+
+            Console.WriteLine("\nEdge DetaylarÄ± (Weight'ler otomatik hesaplandÄ±):");
+            var printedEdges = new HashSet<string>();
+            foreach (var edge in graph.Edges)
+            {
+                string key = $"{Math.Min(edge.FromNodeId, edge.ToNodeId)}-{Math.Max(edge.FromNodeId, edge.ToNodeId)}";
+                if (!printedEdges.Contains(key))
+                {
+                    var fromNode = graph.GetNode(edge.FromNodeId);
+                    var toNode = graph.GetNode(edge.ToNodeId);
+                    Console.WriteLine($"  {fromNode?.Name} <-> {toNode?.Name}: Weight = {edge.Weight:F4}");
+                    printedEdges.Add(key);
+                }
+            }
+
+            return graph;
+        }
+
+        
+        /// Dijkstra algoritmasÄ± demo
+        
+        private static void DemoDijkstra(Graph graph)
+        {
+            Console.WriteLine("\n\n=== Dijkstra's Shortest Path ===");
+            
+            var dijkstra = new Dijkstra();
+            int startNodeId = 1;
+            
+            // AlgoritmayÄ± Ã§alÄ±ÅŸtÄ±r
+            var visitedOrder = dijkstra.Execute(graph, startNodeId);
+            
+            Console.WriteLine($"\nBaÅŸlangÄ±Ã§ Node: {graph.GetNode(startNodeId)?.Name} (ID:{startNodeId})");
+            Console.WriteLine($"Ziyaret SÄ±rasÄ±: {string.Join(" -> ", visitedOrder)}");
+            
+            // TÃ¼m node'lara olan mesafeleri gÃ¶ster
+            Console.WriteLine("\nTÃ¼m Node'lara Olan En KÄ±sa Mesafeler:");
+            foreach (var node in graph.Nodes)
+            {
+                double distance = dijkstra.GetDistance(node.Id);
+                string distStr = distance == double.PositiveInfinity ? "UlaÅŸÄ±lamaz" : distance.ToString("F4");
+                Console.WriteLine($"  {graph.GetNode(startNodeId)?.Name} -> {node.Name}: {distStr}");
+            }
+            
+            // Belirli bir node'a yol
+            int targetId = 4;
+            var path = dijkstra.GetShortestPath(targetId);
+            Console.WriteLine($"\n{graph.GetNode(startNodeId)?.Name} -> {graph.GetNode(targetId)?.Name} En KÄ±sa Yol:");
+            Console.WriteLine($"  {string.Join(" -> ", path.ConvertAll(id => graph.GetNode(id)?.Name ?? id.ToString()))}");
+            Console.WriteLine($"  Toplam Maliyet: {dijkstra.GetDistance(targetId):F4}");
+        }
+
+        
+        /// A* algoritmasÄ± demo (basit)
+        
+        private static void DemoAStar(Graph graph)
+        {
+            Console.WriteLine("\n\n=== A* Pathfinding (Basic) ===");
+            
+            var aStar = new AStar();
+            int startNodeId = 1;
+            int targetNodeId = 4;
+            
+            // Belirli bir hedefe yol bul
+            var path = aStar.FindPath(graph, startNodeId, targetNodeId);
+            
+            Console.WriteLine($"\nBaÅŸlangÄ±Ã§: {graph.GetNode(startNodeId)?.Name} (ID:{startNodeId})");
+            Console.WriteLine($"Hedef: {graph.GetNode(targetNodeId)?.Name} (ID:{targetNodeId})");
+            
+            if (path.Count > 0)
+            {
+                Console.WriteLine($"\nBulunan Yol:");
+                Console.WriteLine($"  {string.Join(" -> ", path.ConvertAll(id => graph.GetNode(id)?.Name ?? id.ToString()))}");
+                Console.WriteLine($"  Toplam Maliyet: {aStar.GetCost(targetNodeId):F4}");
+            }
+            else
+            {
+                Console.WriteLine("\nYol bulunamadÄ±!");
+            }
+        }
+
+        
+        /// A* algoritmasÄ± demo (pozisyon-based heuristic ile)
+        
+        private static void DemoAStarWithPositions()
+        {
+            Console.WriteLine("\n\n=== A* Pathfinding (Position-Based) ===");
+            
+            // Pozisyon bilgisi olan graph oluÅŸtur
+            var graph = new Graph();
+            
+            // Node'larÄ± grid Ã¼zerinde konumlandÄ±r
+            var nodeA = new Node { Id = 1, Name = "A", X = 0, Y = 0, Activity = 5, InteractionCount = 100, ConnectionCount = 10 };
+            var nodeB = new Node { Id = 2, Name = "B", X = 1, Y = 0, Activity = 5, InteractionCount = 100, ConnectionCount = 10 };
+            var nodeC = new Node { Id = 3, Name = "C", X = 2, Y = 0, Activity = 5, InteractionCount = 100, ConnectionCount = 10 };
+            var nodeD = new Node { Id = 4, Name = "D", X = 1, Y = 1, Activity = 5, InteractionCount = 100, ConnectionCount = 10 };
+            var nodeE = new Node { Id = 5, Name = "E", X = 2, Y = 1, Activity = 5, InteractionCount = 100, ConnectionCount = 10 };
+            var nodeF = new Node { Id = 6, Name = "F", X = 2, Y = 2, Activity = 5, InteractionCount = 100, ConnectionCount = 10 };
+            
+            graph.AddNode(nodeA);
+            graph.AddNode(nodeB);
+            graph.AddNode(nodeC);
+            graph.AddNode(nodeD);
+            graph.AddNode(nodeE);
+            graph.AddNode(nodeF);
+            
+            // BaÄŸlantÄ±lar (manuel weight ile - mesafeye gÃ¶re)
+            graph.AddEdge(1, 2, 1.0); // A-B
+            graph.AddEdge(2, 3, 1.0); // B-C
+            graph.AddEdge(2, 4, 1.0); // B-D
+            graph.AddEdge(3, 5, 1.0); // C-E
+            graph.AddEdge(4, 5, 1.0); // D-E
+            graph.AddEdge(5, 6, 1.0); // E-F
+            
+            Console.WriteLine("\n2D Grid Graph:");
+            Console.WriteLine("  F(2,2)");
+            Console.WriteLine("    |");
+            Console.WriteLine("  D(1,1)-E(2,1)");
+            Console.WriteLine("    |     |");
+            Console.WriteLine("  A(0,0)-B(1,0)-C(2,0)");
+            
+            // A'dan F'ye en kÄ±sa yol
+            var aStar = new AStar();
+            var path = aStar.FindPath(graph, startNodeId: 1, targetNodeId: 6);
+            
+            Console.WriteLine($"\n{nodeA.Name} -> {nodeF.Name} En KÄ±sa Yol:");
+            Console.WriteLine($"  {string.Join(" -> ", path.ConvertAll(id => graph.GetNode(id)?.Name ?? id.ToString()))}");
+            Console.WriteLine($"  Toplam Maliyet: {aStar.GetCost(6):F2}");
+            
+            // Euclidean distance heuristic kullanÄ±ldÄ±
+            Console.WriteLine($"\nEuclidean Distance (heuristic): {nodeA.DistanceTo(nodeF):F2}");
+        }
+
+        
+        /// CSV'den graph yÃ¼kleme Ã¶rneÄŸi
+        
+        private static void DemoLoadFromCsv()
+        {
+            Console.WriteLine("\n\n=== CSV'den Graph YÃ¼kleme ===");
+            
+            // Not: Bu Ã¶rnek iÃ§in bir CSV dosyasÄ± gerekli
+            // CSV formatÄ±: Id,Name,Activity,InteractionCount,ConnectionCount
+            // Ã–rnek:
+            // 1,Ali,8.5,120,15
+            // 2,AyÅŸe,7.2,95,12
+            
+            string csvPath = "sample_data.csv";
+            
+            if (System.IO.File.Exists(csvPath))
+            {
+                var csvLoader = new CsvLoader();
+                
+                // Sadece node'larÄ± yÃ¼kle
+                var nodes = csvLoader.LoadNodes(csvPath);
+                Console.WriteLine($"YÃ¼klenen Node SayÄ±sÄ±: {nodes.Count}");
+                
+                // Graph oluÅŸtur (tam baÄŸlÄ±)
+                var graph = csvLoader.LoadGraph(csvPath, createFullyConnected: true);
+                Console.WriteLine($"Graph - Node: {graph.Nodes.Count}, Edge: {graph.Edges.Count / 2}");
+            }
+            else
+            {
+                Console.WriteLine($"CSV dosyasÄ± bulunamadÄ±: {csvPath}");
+                Console.WriteLine("Ã–rnek CSV formatÄ±:");
+                Console.WriteLine("Id,Name,Activity,InteractionCount,ConnectionCount");
+                Console.WriteLine("1,Ali,8.5,120,15");
+                Console.WriteLine("2,AyÅŸe,7.2,95,12");
+            }
+        }
+
+        
+        /// Weight hesaplama Ã¶rneÄŸi
+        
+        public static void DemoWeightCalculation()
+        {
+            Console.WriteLine("\n\n=== Weight Hesaplama Demo ===");
+            
+            var node1 = new Node { Id = 1, Name = "Ali", Activity = 8.5, InteractionCount = 120, ConnectionCount = 15 };
+            var node2 = new Node { Id = 2, Name = "AyÅŸe", Activity = 7.2, InteractionCount = 95, ConnectionCount = 12 };
+            
+            double weight = WeightCalculator.Calculate(node1, node2);
+            
+            Console.WriteLine($"\nNode 1: {node1.Name}");
+            Console.WriteLine($"  Activity: {node1.Activity}, Interactions: {node1.InteractionCount}, Connections: {node1.ConnectionCount}");
+            
+            Console.WriteLine($"\nNode 2: {node2.Name}");
+            Console.WriteLine($"  Activity: {node2.Activity}, Interactions: {node2.InteractionCount}, Connections: {node2.ConnectionCount}");
+            
+            Console.WriteLine($"\nHesaplanan Weight: {weight:F6}");
+            Console.WriteLine("\nFormÃ¼l: 1 / (1 + (Activity_diff)Â² + (Interaction_diff)Â² + (Connection_diff)Â²)");
+        }
+
+        
+        /// TÃ¼m algoritmalarÄ± karÅŸÄ±laÅŸtÄ±rma
+        
+        public static void CompareAlgorithms()
+        {
+            Console.WriteLine("\n\n=== Algoritma KarÅŸÄ±laÅŸtÄ±rmasÄ± ===\n");
+            
+            var graph = CreateSampleGraph();
+            int startId = 1;
+            
+            Console.WriteLine($"BaÅŸlangÄ±Ã§ Node: {graph.GetNode(startId)?.Name}\n");
+            
+            // BFS
+            var bfs = new BFS();
+            var bfsResult = bfs.Execute(graph, startId);
+            Console.WriteLine($"BFS Ziyaret SÄ±rasÄ±: {string.Join(" -> ", bfsResult)}");
+            
+            // DFS
+            var dfs = new DFS();
+            var dfsResult = dfs.Execute(graph, startId);
+            Console.WriteLine($"DFS Ziyaret SÄ±rasÄ±: {string.Join(" -> ", dfsResult)}");
+            
+            // Dijkstra
+            var dijkstra = new Dijkstra();
+            var dijkstraResult = dijkstra.Execute(graph, startId);
+            Console.WriteLine($"Dijkstra Ziyaret SÄ±rasÄ±: {string.Join(" -> ", dijkstraResult)}");
+            
+            // A*
+            var aStar = new AStar();
+            var aStarResult = aStar.Execute(graph, startId);
+            Console.WriteLine($"A* Ziyaret SÄ±rasÄ±: {string.Join(" -> ", aStarResult)}");
+        }
+    }
+}
+
+
+===============================
+AStar.cs
+===============================
+using SNA.GraphAlgorithms.Core.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace SNA.GraphAlgorithms.Core.Algorithms
+{
+    
+    /// A* (A-Star) Pathfinding algoritmasÄ±
+    /// Heuristic kullanarak hedef node'a en optimal yolu bulur
+    
+    public class AStar : IGraphAlgorithm
+    {
+        public string Name => "A* Pathfinding";
+
+        private Dictionary<int, double> gScores = new Dictionary<int, double>(); // Start'tan node'a gerÃ§ek maliyet
+        private Dictionary<int, double> fScores = new Dictionary<int, double>(); // g + heuristic
+        private Dictionary<int, int?> previousNodes = new Dictionary<int, int?>();
+        private int? targetNodeId = null;
+
+        
+        /// A* algoritmasÄ±nÄ± Ã§alÄ±ÅŸtÄ±rÄ±r
+        /// Not: Hedef node belirtmeden Ã§alÄ±ÅŸtÄ±rÄ±lÄ±rsa Dijkstra gibi Ã§alÄ±ÅŸÄ±r
+        
+        /// <param name="graph">Ãœzerinde Ã§alÄ±ÅŸÄ±lacak graph</param>
+        /// <param name="startNodeId">BaÅŸlangÄ±Ã§ dÃ¼ÄŸÃ¼mÃ¼ ID</param>
+        /// <returns>Ziyaret edilen dÃ¼ÄŸÃ¼mlerin ID listesi</returns>
+        public List<int> Execute(Graph graph, int startNodeId)
+        {
+            if (graph == null)
+                throw new ArgumentNullException(nameof(graph));
+
+            if (!graph.NodeById.ContainsKey(startNodeId))
+                throw new ArgumentException($"Start node with Id {startNodeId} not found in graph.", nameof(startNodeId));
+
+            // Hedef belirtilmemiÅŸse tÃ¼m graph'Ä± tara
+            return ExecuteInternal(graph, startNodeId, targetNodeId: null);
+        }
+
+        
+        /// A* algoritmasÄ±nÄ± belirli bir hedefe doÄŸru Ã§alÄ±ÅŸtÄ±rÄ±r
+        /
+        /// <param name="graph">Ãœzerinde Ã§alÄ±ÅŸÄ±lacak graph</param>
+        /// <param name="startNodeId">BaÅŸlangÄ±Ã§ dÃ¼ÄŸÃ¼mÃ¼ ID</param>
+        /// <param name="targetNodeId">Hedef dÃ¼ÄŸÃ¼mÃ¼ ID</param>
+        /// <returns>BaÅŸlangÄ±Ã§tan hedefe olan en kÄ±sa yol (node ID listesi)</returns>
+        public List<int> FindPath(Graph graph, int startNodeId, int targetNodeId)
+        {
+            if (graph == null)
+                throw new ArgumentNullException(nameof(graph));
+
+            if (!graph.NodeById.ContainsKey(startNodeId))
+                throw new ArgumentException($"Start node with Id {startNodeId} not found in graph.", nameof(startNodeId));
+
+            if (!graph.NodeById.ContainsKey(targetNodeId))
+                throw new ArgumentException($"Target node with Id {targetNodeId} not found in graph.", nameof(targetNodeId));
+
+            this.targetNodeId = targetNodeId;
+            var visitedOrder = ExecuteInternal(graph, startNodeId, targetNodeId);
+
+            // Yolu reconstruct et
+            return ReconstructPath(targetNodeId);
+        }
+
+        
+        /// A* algoritmasÄ±nÄ±n asÄ±l implementasyonu
+        
+        private List<int> ExecuteInternal(Graph graph, int startNodeId, int? targetNodeId)
+        {
+            // Initialize
+            gScores = new Dictionary<int, double>();
+            fScores = new Dictionary<int, double>();
+            previousNodes = new Dictionary<int, int?>();
+            var visited = new HashSet<int>();
+            var visitedOrder = new List<int>();
+
+            // TÃ¼m node'lara sonsuz maliyet ata
+            foreach (var node in graph.Nodes)
+            {
+                gScores[node.Id] = double.PositiveInfinity;
+                fScores[node.Id] = double.PositiveInfinity;
+                previousNodes[node.Id] = null;
+            }
+
+            // BaÅŸlangÄ±Ã§ node'unun maliyeti 0
+            gScores[startNodeId] = 0;
+            fScores[startNodeId] = targetNodeId.HasValue 
+                ? CalculateHeuristic(graph, startNodeId, targetNodeId.Value)
+                : 0;
+
+            // Priority queue (f-score'a gÃ¶re sÄ±ralÄ±)
+            var openSet = new SortedSet<(double fScore, int nodeId)>(
+                Comparer<(double, int)>.Create((a, b) =>
+                {
+                    int result = a.Item1.CompareTo(b.Item1);
+                    return result != 0 ? result : a.Item2.CompareTo(b.Item2);
+                })
+            );
+
+            openSet.Add((fScores[startNodeId], startNodeId));
+
+            while (openSet.Count > 0)
+            {
+                // En dÃ¼ÅŸÃ¼k f-score'lu node'u al
+                var (currentFScore, currentId) = openSet.Min;
+                openSet.Remove(openSet.Min);
+
+                // Hedefe ulaÅŸtÄ±ysak dur
+                if (targetNodeId.HasValue && currentId == targetNodeId.Value)
+                {
+                    visitedOrder.Add(currentId);
+                    break;
+                }
+
+                // Ziyaret et
+                visited.Add(currentId);
+                visitedOrder.Add(currentId);
+
+                var currentNode = graph.GetNode(currentId);
+                if (currentNode == null)
+                    continue;
+
+                // KomÅŸularÄ± kontrol et
+                var edges = graph.GetEdges(currentNode);
+                foreach (var edge in edges)
+                {
+                    int neighborId = edge.ToNodeId;
+
+                    if (visited.Contains(neighborId))
+                        continue;
+
+                    // GeÃ§ici g-score hesapla
+                    double tentativeGScore = gScores[currentId] + edge.Weight;
+
+                    // Daha iyi bir yol bulunduysa gÃ¼ncelle
+                    if (tentativeGScore < gScores[neighborId])
+                    {
+                        // Eski entry'yi kaldÄ±r (varsa)
+                        openSet.Remove((fScores[neighborId], neighborId));
+
+                        // GÃ¼ncelle
+                        previousNodes[neighborId] = currentId;
+                        gScores[neighborId] = tentativeGScore;
+                        
+                        double heuristic = targetNodeId.HasValue 
+                            ? CalculateHeuristic(graph, neighborId, targetNodeId.Value)
+                            : 0;
+                        
+                        fScores[neighborId] = tentativeGScore + heuristic;
+
+                        // Open set'e ekle
+                        openSet.Add((fScores[neighborId], neighborId));
+                    }
+                }
+            }
+
+            return visitedOrder;
+        }
+
+        
+        /// Heuristic fonksiyonu: Ä°ki node arasÄ±ndaki tahmini maliyet
+        /// Euclidean distance kullanÄ±r (node'larda X,Y varsa)
+        /// Yoksa node Ã¶zelliklerinin benzerliÄŸini kullanÄ±r
+        
+        private double CalculateHeuristic(Graph graph, int fromId, int toId)
+        {
+            var fromNode = graph.GetNode(fromId);
+            var toNode = graph.GetNode(toId);
+
+            if (fromNode == null || toNode == null)
+                return 0;
+
+            // EÄŸer node'larda pozisyon bilgisi varsa Euclidean distance kullan
+            if ((fromNode.X != 0 || fromNode.Y != 0) && (toNode.X != 0 || toNode.Y != 0))
+            {
+                return fromNode.DistanceTo(toNode);
+            }
+
+            // Yoksa node Ã¶zelliklerinin farkÄ±nÄ± kullan (admissible heuristic)
+            // Bu heuristic her zaman gerÃ§ek maliyetten kÃ¼Ã§Ã¼k veya eÅŸit olmalÄ±
+            double activityDiff = Math.Abs(fromNode.Activity - toNode.Activity);
+            double interactionDiff = Math.Abs(fromNode.InteractionCount - toNode.InteractionCount);
+            double connectionDiff = Math.Abs(fromNode.ConnectionCount - toNode.ConnectionCount);
+
+            // Normalize et (0-1 arasÄ±)
+            double totalDiff = (activityDiff + interactionDiff / 100.0 + connectionDiff / 10.0) / 3.0;
+            
+            return totalDiff;
+        }
+
+        
+        /// Hedefe olan yolu reconstruct eder
+        
+        private List<int> ReconstructPath(int targetId)
+        {
+            if (!previousNodes.ContainsKey(targetId))
+                return new List<int>();
+
+            // EÄŸer hedefe ulaÅŸÄ±lamÄ±yorsa
+            if (gScores[targetId] == double.PositiveInfinity)
+                return new List<int>();
+
+            var path = new List<int>();
+            int? currentId = targetId;
+
+            while (currentId.HasValue)
+            {
+                path.Add(currentId.Value);
+                currentId = previousNodes[currentId.Value];
+            }
+
+            path.Reverse();
+            return path;
+        }
+
+        
+        /// Belirli bir node'a olan maliyeti dÃ¶ndÃ¼rÃ¼r
+        
+        public double GetCost(int nodeId)
+        {
+            if (!gScores.ContainsKey(nodeId))
+                throw new InvalidOperationException("FindPath() or Execute() must be called first.");
+
+            return gScores[nodeId];
+        }
+
+        
+        /// TÃ¼m maliyetleri dÃ¶ndÃ¼rÃ¼r (debugging iÃ§in)
+        
+        public Dictionary<int, double> GetAllCosts()
+        {
+            return new Dictionary<int, double>(gScores);
+        }
+    }
+}
+
+
+===============================
+BFS.cs
+===============================
+using SNA.GraphAlgorithms.Core.Models;
+using System;
+using System.Collections.Generic;
+
+namespace SNA.GraphAlgorithms.Core.Algorithms
+{
+    
+    /// Breadth-First Search (Geniþlik Öncelikli Arama) algoritmasý
+    /// Graph üzerinde seviye seviye dolaþýr
+    
+    public class BFS : IGraphAlgorithm
+    {
+        public string Name => "Breadth-First Search (BFS)";
+
+        
+        /// BFS algoritmasýný çalýþtýrýr
+        
+        /// <param name="graph">Üzerinde çalýþýlacak graph</param>
+        /// <param name="startNodeId">Baþlangýç düðümü ID</param>
+        /// <returns>Ziyaret edilen düðümlerin ID listesi (ziyaret sýrasýna göre)</returns>
+        public List<int> Execute(Graph graph, int startNodeId)
+        {
+            if (graph == null)
+                throw new ArgumentNullException(nameof(graph));
+
+            if (!graph.NodeById.ContainsKey(startNodeId))
+                throw new ArgumentException($"Start node with Id {startNodeId} not found in graph.", nameof(startNodeId));
+
+            // Ziyaret edilen node'larýn listesi
+            List<int> visitedOrder = new List<int>();
+            
+            // Ziyaret edildi mi kontrolü
+            HashSet<int> visited = new HashSet<int>();
+            
+            // BFS için kuyruk
+            Queue<int> queue = new Queue<int>();
+
+            // Baþlangýç node'unu kuyruða ekle
+            queue.Enqueue(startNodeId);
+            visited.Add(startNodeId);
+
+            while (queue.Count > 0)
+            {
+                int currentId = queue.Dequeue();
+                visitedOrder.Add(currentId);
+
+                var currentNode = graph.GetNode(currentId);
+                if (currentNode == null)
+                    continue;
+
+                // Komþularý ziyaret et
+                foreach (int neighborId in currentNode.Neighbors)
+                {
+                    if (!visited.Contains(neighborId))
+                    {
+                        visited.Add(neighborId);
+                        queue.Enqueue(neighborId);
+                    }
+                }
+            }
+
+            return visitedOrder;
+        }
+    }
+}
+
+
+
+===============================
+ConnectedComponents.cs
+===============================
+using SNA.GraphAlgorithms.Core.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace SNA.GraphAlgorithms.Core.Algorithms
+{
+    
+    /// Baðlý Bileþenler (Connected Components) Algoritmasý
+    /// Graf içindeki ayrýk topluluklarý (disjoint communities) bulur
+    
+    public class ConnectedComponents : IGraphAlgorithm
+    {
+        public string Name => "Connected Components (Disjoint Communities)";
+
+        // Son çalýþtýrmadan kalan bileþen bilgileri
+        private Dictionary<int, int> nodeToComponent = new Dictionary<int, int>();
+        private List<List<int>> components = new List<List<int>>();
+
+        
+        /// Baðlý bileþenleri bulur
+        
+        /// <param name="graph">Üzerinde çalýþýlacak graph</param>
+        /// <param name="startNodeId">Kullanýlmýyor (tüm graf taranýr)</param>
+        /// <returns>Ýlk bileþendeki düðümlerin ID listesi</returns>
+        public List<int> Execute(Graph graph, int startNodeId)
+        {
+            if (graph == null)
+                throw new ArgumentNullException(nameof(graph));
+
+            // Önceki sonuçlarý temizle
+            nodeToComponent = new Dictionary<int, int>();
+            components = new List<List<int>>();
+
+            if (graph.Nodes.Count == 0)
+                return new List<int>();
+
+            // Ziyaret edilmemiþ düðümleri takip et
+            var visited = new HashSet<int>();
+            int componentId = 0;
+
+            // Her ziyaret edilmemiþ düðümden BFS/DFS baþlat
+            foreach (var node in graph.Nodes)
+            {
+                if (!visited.Contains(node.Id))
+                {
+                    var component = new List<int>();
+                    BFSComponent(graph, node.Id, visited, component, componentId);
+                    components.Add(component);
+                    componentId++;
+                }
+            }
+
+            // Ýlk bileþeni döndür (en büyük bileþen olabilir)
+            return components.Count > 0 ? components[0] : new List<int>();
+        }
+
+        
+        /// BFS ile bir bileþeni keþfeder
+        /
+        private void BFSComponent(Graph graph, int startId, HashSet<int> visited, List<int> component, int componentId)
+        {
+            var queue = new Queue<int>();
+            queue.Enqueue(startId);
+            visited.Add(startId);
+
+            while (queue.Count > 0)
+            {
+                int currentId = queue.Dequeue();
+                component.Add(currentId);
+                nodeToComponent[currentId] = componentId;
+
+                var currentNode = graph.GetNode(currentId);
+                if (currentNode == null)
+                    continue;
+
+                foreach (int neighborId in currentNode.Neighbors)
+                {
+                    if (!visited.Contains(neighborId))
+                    {
+                        visited.Add(neighborId);
+                        queue.Enqueue(neighborId);
+                    }
+                }
+            }
+        }
+
+        
+        /// Bileþen sayýsýný döndürür
+        
+        public int GetComponentCount()
+        {
+            return components.Count;
+        }
+
+        
+        /// Tüm bileþenleri döndürür
+        
+        public List<List<int>> GetAllComponents()
+        {
+            return components.Select(c => new List<int>(c)).ToList();
+        }
+
+        
+        /// Belirli bir düðümün hangi bileþende olduðunu döndürür
+        
+        public int GetComponentId(int nodeId)
+        {
+            if (!nodeToComponent.ContainsKey(nodeId))
+                throw new InvalidOperationException($"Node {nodeId} not found. Execute() must be called first.");
+
+            return nodeToComponent[nodeId];
+        }
+
+        
+        /// En büyük bileþeni döndürür
+        
+        public List<int> GetLargestComponent()
+        {
+            if (components.Count == 0)
+                return new List<int>();
+
+            return components.OrderByDescending(c => c.Count).First();
+        }
+
+        
+        /// Belirli bir bileþeni döndürür
+        
+        public List<int> GetComponent(int componentId)
+        {
+            if (componentId < 0 || componentId >= components.Count)
+                throw new ArgumentOutOfRangeException(nameof(componentId));
+
+            return new List<int>(components[componentId]);
+        }
+
+        
+        /// Ýki düðümün ayný bileþende olup olmadýðýný kontrol eder
+        
+        public bool AreConnected(int nodeId1, int nodeId2)
+        {
+            if (!nodeToComponent.ContainsKey(nodeId1) || !nodeToComponent.ContainsKey(nodeId2))
+                return false;
+
+            return nodeToComponent[nodeId1] == nodeToComponent[nodeId2];
+        }
+
+        
+        /// Grafýn baðlý olup olmadýðýný kontrol eder
+        
+        public bool IsGraphConnected()
+        {
+            return components.Count == 1;
+        }
+    }
+}
+
+
+===============================
+DegreeCentrality.cs
+===============================
+using SNA.GraphAlgorithms.Core.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace SNA.GraphAlgorithms.Core.Algorithms
+{
+    
+    /// Degree Centrality Algoritmasý
+    /// Düðümlerin merkezilik (centrality) deðerlerini hesaplar
+    /// En etkili düðümleri bulur
+    
+    public class DegreeCentrality : IGraphAlgorithm
+    {
+        public string Name => "Degree Centrality";
+
+        // Son çalýþtýrmadan kalan merkezilik deðerleri
+        private Dictionary<int, double> centralityScores = new Dictionary<int, double>();
+        private Dictionary<int, int> degreeValues = new Dictionary<int, int>();
+
+        
+        /// Degree Centrality algoritmasýný çalýþtýrýr
+        
+        /// <param name="graph">Üzerinde çalýþýlacak graph</param>
+        /// <param name="startNodeId">Kullanýlmýyor (tüm düðümler hesaplanýr)</param>
+        /// <returns>Merkezilik sýrasýna göre (azalan) düðüm ID listesi</returns>
+        public List<int> Execute(Graph graph, int startNodeId)
+        {
+            if (graph == null)
+                throw new ArgumentNullException(nameof(graph));
+
+            // Önceki sonuçlarý temizle
+            centralityScores = new Dictionary<int, double>();
+            degreeValues = new Dictionary<int, int>();
+
+            if (graph.Nodes.Count == 0)
+                return new List<int>();
+
+            int n = graph.Nodes.Count;
+
+            // Her düðümün degree'sini ve centrality'sini hesapla
+            foreach (var node in graph.Nodes)
+            {
+                int degree = node.Neighbors.Count;
+                degreeValues[node.Id] = degree;
+
+                // Normalize edilmiþ centrality: degree / (n-1)
+                double centrality = n > 1 ? (double)degree / (n - 1) : 0;
+                centralityScores[node.Id] = centrality;
+            }
+
+            // Merkezilik sýrasýna göre sýrala (azalan)
+            return centralityScores
+                .OrderByDescending(kvp => kvp.Value)
+                .Select(kvp => kvp.Key)
+                .ToList();
+        }
+
+        
+        /// Belirli bir düðümün centrality deðerini döndürür
+        
+        public double GetCentrality(int nodeId)
+        {
+            if (!centralityScores.ContainsKey(nodeId))
+                throw new InvalidOperationException($"Node {nodeId} centrality not calculated. Execute() must be called first.");
+
+            return centralityScores[nodeId];
+        }
+
+        
+        /// Belirli bir düðümün degree deðerini döndürür
+        /
+        public int GetDegree(int nodeId)
+        {
+            if (!degreeValues.ContainsKey(nodeId))
+                throw new InvalidOperationException($"Node {nodeId} degree not calculated. Execute() must be called first.");
+
+            return degreeValues[nodeId];
+        }
+
+        
+        /// Tüm centrality deðerlerini döndürür
+        
+        public Dictionary<int, double> GetAllCentralities()
+        {
+            return new Dictionary<int, double>(centralityScores);
+        }
+
+        
+        /// En yüksek centrality'ye sahip N düðümü döndürür
+        
+        /// <param name="count">Döndürülecek düðüm sayýsý</param>
+        public List<(int NodeId, double Centrality, int Degree)> GetTopNodes(int count = 5)
+        {
+            return centralityScores
+                .OrderByDescending(kvp => kvp.Value)
+                .Take(count)
+                .Select(kvp => (kvp.Key, kvp.Value, degreeValues[kvp.Key]))
+                .ToList();
+        }
+
+        
+        /// En düþük centrality'ye sahip N düðümü döndürür (izole düðümler)
+        
+        public List<(int NodeId, double Centrality, int Degree)> GetBottomNodes(int count = 5)
+        {
+            return centralityScores
+                .OrderBy(kvp => kvp.Value)
+                .Take(count)
+                .Select(kvp => (kvp.Key, kvp.Value, degreeValues[kvp.Key]))
+                .ToList();
+        }
+
+        
+        /// Ortalama centrality deðerini döndürür
+        
+        public double GetAverageCentrality()
+        {
+            if (centralityScores.Count == 0)
+                return 0;
+
+            return centralityScores.Values.Average();
+        }
+
+        
+        /// Graf yoðunluðunu (density) hesaplar
+        /// Density = 2*E / (V*(V-1))
+        
+        public double GetGraphDensity(Graph graph)
+        {
+            if (graph == null || graph.Nodes.Count <= 1)
+                return 0;
+
+            int v = graph.Nodes.Count;
+            // Edges listesi çift yönlü tutulduðu için 2'ye bölüyoruz
+            int e = graph.Edges.Count / 2;
+            double maxEdges = (double)v * (v - 1) / 2;
+
+            return e / maxEdges;
+        }
+    }
+}
+
+
+===============================
+DFS.cs
+===============================
+using SNA.GraphAlgorithms.Core.Models;
+using System;
+using System.Collections.Generic;
+
+namespace SNA.GraphAlgorithms.Core.Algorithms
+{
+    
+    /// Depth-First Search (Derinlik Öncelikli Arama) algoritmasý
+    /// Graph üzerinde mümkün olduðunca derine iner
+    
+    public class DFS : IGraphAlgorithm
+    {
+        public string Name => "Depth-First Search (DFS)";
+
+        
+        /// DFS algoritmasýný çalýþtýrýr
+        
+        /// <param name="graph">Üzerinde çalýþýlacak graph</param>
+        /// <param name="startNodeId">Baþlangýç düðümü ID</param>
+        /// <returns>Ziyaret edilen düðümlerin ID listesi (ziyaret sýrasýna göre)</returns>
+        public List<int> Execute(Graph graph, int startNodeId)
+        {
+            if (graph == null)
+                throw new ArgumentNullException(nameof(graph));
+
+            if (!graph.NodeById.ContainsKey(startNodeId))
+                throw new ArgumentException($"Start node with Id {startNodeId} not found in graph.", nameof(startNodeId));
+
+            // Ziyaret edilen node'larýn listesi
+            List<int> visitedOrder = new List<int>();
+            
+            // Ziyaret edildi mi kontrolü
+            HashSet<int> visited = new HashSet<int>();
+
+            // DFS'i baþlat
+            DFSRecursive(graph, startNodeId, visited, visitedOrder);
+
+            return visitedOrder;
+        }
+
+        
+        /// Recursive DFS helper metodu
+        
+        private void DFSRecursive(Graph graph, int currentId, HashSet<int> visited, List<int> visitedOrder)
+        {
+            // Node'u ziyaret et
+            visited.Add(currentId);
+            visitedOrder.Add(currentId);
+
+            var currentNode = graph.GetNode(currentId);
+            if (currentNode == null)
+                return;
+
+            // Komþularý recursive olarak ziyaret et
+            foreach (int neighborId in currentNode.Neighbors)
+            {
+                if (!visited.Contains(neighborId))
+                {
+                    DFSRecursive(graph, neighborId, visited, visitedOrder);
+                }
+            }
+        }
+    }
+}
+
+
+
+===============================
+Dijkstra.cs
+===============================
+using SNA.GraphAlgorithms.Core.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace SNA.GraphAlgorithms.Core.Algorithms
+{
+    /
+    /// Dijkstra's Shortest Path algoritmasÄ±
+    /// Weighted graph'ta bir node'dan diÄŸer tÃ¼m node'lara en kÄ±sa yolu bulur
+    
+    public class Dijkstra : IGraphAlgorithm
+    {
+        public string Name => "Dijkstra's Shortest Path";
+
+        // Son Ã§alÄ±ÅŸtÄ±rmadan kalan mesafe bilgileri
+        private Dictionary<int, double> distances = new Dictionary<int, double>();
+        private Dictionary<int, int?> previousNodes = new Dictionary<int, int?>();
+
+        
+        /// Dijkstra algoritmasÄ±nÄ± Ã§alÄ±ÅŸtÄ±rÄ±r
+        
+        /// <param name="graph">Ãœzerinde Ã§alÄ±ÅŸÄ±lacak graph</param>
+        /// <param name="startNodeId">BaÅŸlangÄ±Ã§ dÃ¼ÄŸÃ¼mÃ¼ ID</param>
+        /// <returns>Ziyaret edilen dÃ¼ÄŸÃ¼mlerin ID listesi (shortest path tree sÄ±rasÄ±na gÃ¶re)</returns>
+        public List<int> Execute(Graph graph, int startNodeId)
+        {
+            if (graph == null)
+                throw new ArgumentNullException(nameof(graph));
+
+            if (!graph.NodeById.ContainsKey(startNodeId))
+                throw new ArgumentException($"Start node with Id {startNodeId} not found in graph.", nameof(startNodeId));
+
+            // Initialize
+            distances = new Dictionary<int, double>();
+            previousNodes = new Dictionary<int, int?>();
+            var visited = new HashSet<int>();
+            var visitedOrder = new List<int>();
+
+            // TÃ¼m node'lara sonsuz mesafe ata
+            foreach (var node in graph.Nodes)
+            {
+                distances[node.Id] = double.PositiveInfinity;
+                previousNodes[node.Id] = null;
+            }
+
+            // BaÅŸlangÄ±Ã§ node'unun mesafesi 0
+            distances[startNodeId] = 0;
+
+            // Priority queue (mesafeye gÃ¶re sÄ±ralÄ±)
+            var priorityQueue = new SortedSet<(double distance, int nodeId)>(
+                Comparer<(double, int)>.Create((a, b) =>
+                {
+                    int result = a.Item1.CompareTo(b.Item1);
+                    return result != 0 ? result : a.Item2.CompareTo(b.Item2);
+                })
+            );
+
+            priorityQueue.Add((0, startNodeId));
+
+            while (priorityQueue.Count > 0)
+            {
+                // En kÄ±sa mesafeli node'u al
+                var (currentDistance, currentId) = priorityQueue.Min;
+                priorityQueue.Remove(priorityQueue.Min);
+
+                // Zaten ziyaret edildiyse atla
+                if (visited.Contains(currentId))
+                    continue;
+
+                // Ziyaret et
+                visited.Add(currentId);
+                visitedOrder.Add(currentId);
+
+                var currentNode = graph.GetNode(currentId);
+                if (currentNode == null)
+                    continue;
+
+                // KomÅŸularÄ± kontrol et
+                var edges = graph.GetEdges(currentNode);
+                foreach (var edge in edges)
+                {
+                    int neighborId = edge.ToNodeId;
+
+                    if (visited.Contains(neighborId))
+                        continue;
+
+                    // Yeni mesafe hesapla
+                    double newDistance = distances[currentId] + edge.Weight;
+
+                    // Daha kÄ±sa bir yol bulunduysa gÃ¼ncelle
+                    if (newDistance < distances[neighborId])
+                    {
+                        // Eski entry'yi kaldÄ±r (varsa)
+                        priorityQueue.Remove((distances[neighborId], neighborId));
+
+                        // GÃ¼ncelle
+                        distances[neighborId] = newDistance;
+                        previousNodes[neighborId] = currentId;
+
+                        // Yeni entry ekle
+                        priorityQueue.Add((newDistance, neighborId));
+                    }
+                }
+            }
+
+            return visitedOrder;
+        }
+
+        
+        /// Belirli bir hedef node'a en kÄ±sa yolu dÃ¶ndÃ¼rÃ¼r
+        /// Execute() Ã§alÄ±ÅŸtÄ±rÄ±ldÄ±ktan sonra kullanÄ±labilir
+        
+        /// <param name="targetNodeId">Hedef node ID</param>
+        /// <returns>BaÅŸlangÄ±Ã§tan hedefe olan yol (node ID listesi)</returns>
+        public List<int> GetShortestPath(int targetNodeId)
+        {
+            if (!previousNodes.ContainsKey(targetNodeId))
+                throw new InvalidOperationException("Execute() must be called before GetShortestPath().");
+
+            var path = new List<int>();
+            int? currentId = targetNodeId;
+
+            // EÄŸer hedef node'a ulaÅŸÄ±lamÄ±yorsa
+            if (distances[targetNodeId] == double.PositiveInfinity)
+                return path; // BoÅŸ liste
+
+            // Geriye doÄŸru yolu takip et
+            while (currentId.HasValue)
+            {
+                path.Add(currentId.Value);
+                currentId = previousNodes[currentId.Value];
+            }
+
+            // Yolu ters Ã§evir (baÅŸlangÄ±Ã§tan hedefe)
+            path.Reverse();
+            return path;
+        }
+
+        
+        /// Belirli bir node'a olan en kÄ±sa mesafeyi dÃ¶ndÃ¼rÃ¼r
+        /// Execute() Ã§alÄ±ÅŸtÄ±rÄ±ldÄ±ktan sonra kullanÄ±labilir
+        
+        public double GetDistance(int nodeId)
+        {
+            if (!distances.ContainsKey(nodeId))
+                throw new InvalidOperationException("Execute() must be called before GetDistance().");
+
+            return distances[nodeId];
+        }
+
+        
+        /// TÃ¼m mesafeleri dÃ¶ndÃ¼rÃ¼r (debugging iÃ§in)
+        
+        public Dictionary<int, double> GetAllDistances()
+        {
+            return new Dictionary<int, double>(distances);
+        }
+    }
+}
+
+
+===============================
+IGraphAlgorithm.cs
+===============================
+using SNA.GraphAlgorithms.Core.Models;
+using System.Collections.Generic;
+
+namespace SNA.GraphAlgorithms.Core.Algorithms
+{
+    
+    /// Graph Ã¼zerinde Ã§alÄ±ÅŸan algoritmalarÄ±n ortak interface'i
+    
+    public interface IGraphAlgorithm
+    {
+        
+        /// Algoritma adÄ±
+        
+        string Name { get; }
+
+        
+        /// Graph Ã¼zerinde algoritmayÄ± Ã§alÄ±ÅŸtÄ±r
+        
+        /// <param name="graph">Ãœzerinde Ã§alÄ±ÅŸÄ±lacak graph</param>
+        /// <param name="startNodeId">BaÅŸlangÄ±Ã§ dÃ¼ÄŸÃ¼mÃ¼ ID</param>
+        /// <returns>Ziyaret edilen dÃ¼ÄŸÃ¼mlerin ID listesi (ziyaret sÄ±rasÄ±na gÃ¶re)</returns>
+        List<int> Execute(Graph graph, int startNodeId);
+    }
+}
+
+
+===============================
+WelshPowell.cs
+===============================
+using SNA.GraphAlgorithms.Core.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace SNA.GraphAlgorithms.Core.Algorithms
+{
+    
+    /// Welsh-Powell Graf Renklendirme Algoritmasý
+    /// Greedy yaklaþýmla minimum sayýda renk kullanarak graf renklendirme yapar
+    
+    public class WelshPowell : IGraphAlgorithm
+    {
+        public string Name => "Welsh-Powell Graph Coloring";
+
+        // Son çalýþtýrmadan kalan renk bilgileri
+        private Dictionary<int, int> nodeColors = new Dictionary<int, int>();
+        private int chromaticNumber = 0;
+
+        
+        /// Welsh-Powell algoritmasýný çalýþtýrýr
+        
+        /// <param name="graph">Üzerinde çalýþýlacak graph</param>
+        /// <param name="startNodeId">Kullanýlmýyor (interface uyumu için)</param>
+        /// <returns>Renklendirme sýrasýna göre düðüm ID listesi</returns>
+        public List<int> Execute(Graph graph, int startNodeId)
+        {
+            if (graph == null)
+                throw new ArgumentNullException(nameof(graph));
+
+            // Renkleri sýfýrla
+            nodeColors = new Dictionary<int, int>();
+            chromaticNumber = 0;
+
+            if (graph.Nodes.Count == 0)
+                return new List<int>();
+
+            // 1. Düðümleri degree'ye göre azalan sýrada sýrala
+            var sortedNodes = graph.Nodes
+                .OrderByDescending(n => n.Neighbors.Count)
+                .ToList();
+
+            var coloredOrder = new List<int>();
+
+            // 2. Renklendirme iþlemi
+            foreach (var node in sortedNodes)
+            {
+                // Bu düðümün komþularýnýn renkleri
+                var neighborColors = new HashSet<int>();
+                foreach (int neighborId in node.Neighbors)
+                {
+                    if (nodeColors.ContainsKey(neighborId))
+                    {
+                        neighborColors.Add(nodeColors[neighborId]);
+                    }
+                }
+
+                // En küçük kullanýlmayan rengi bul
+                int color = 1;
+                while (neighborColors.Contains(color))
+                {
+                    color++;
+                }
+
+                // Rengi ata
+                nodeColors[node.Id] = color;
+                coloredOrder.Add(node.Id);
+
+                // Kromatik sayýyý güncelle
+                if (color > chromaticNumber)
+                {
+                    chromaticNumber = color;
+                }
+            }
+
+            return coloredOrder;
+        }
+
+        
+        /// Belirli bir düðümün rengini döndürür
+        /// Execute() çalýþtýrýldýktan sonra kullanýlabilir
+        
+        public int GetNodeColor(int nodeId)
+        {
+            if (!nodeColors.ContainsKey(nodeId))
+                throw new InvalidOperationException($"Node {nodeId} has not been colored. Execute() must be called first.");
+
+            return nodeColors[nodeId];
+        }
+
+        
+        /// Tüm düðüm renklerini döndürür
+        
+        public Dictionary<int, int> GetAllColors()
+        {
+            return new Dictionary<int, int>(nodeColors);
+        }
+
+        
+        /// Kullanýlan renk sayýsýný (kromatik sayý) döndürür
+        
+        public int GetChromaticNumber()
+        {
+            return chromaticNumber;
+        }
+
+        
+        /// Ayný renkteki düðümleri gruplar halinde döndürür
+        
+        public Dictionary<int, List<int>> GetColorGroups()
+        {
+            var groups = new Dictionary<int, List<int>>();
+
+            foreach (var kvp in nodeColors)
+            {
+                if (!groups.ContainsKey(kvp.Value))
+                {
+                    groups[kvp.Value] = new List<int>();
+                }
+                groups[kvp.Value].Add(kvp.Key);
+            }
+
+            return groups;
+        }
+    }
+}
+
+
+===============================
+Edge.cs
+===============================
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace SNA.GraphAlgorithms.Core.Models
+{
+    public class Edge
+    {
+        public int FromNodeId { get; set; }
+        public int ToNodeId { get; set; }
+
+        // Dinamik hesaplanacak aðýrlýk (formülden gelecek)
+        public double Weight { get; set; }
+
+        // Grafýmýz yönsüz, ama istersen flag dursun
+        public bool IsDirected { get; set; } = false;
+    }
+}
+
+
+===============================
+Graph.cs
+===============================
+using SNA.GraphAlgorithms.Core.Services;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace SNA.GraphAlgorithms.Core.Models
+{
+    
+    /// Undirected weighted graph yapýsý
+    /// Adjacency list ile node'larýn komþularýný ve edge'lerini tutar
+    
+    public class Graph
+    {
+        // Düðüm listesi (koleksiyon olarak public)
+        public List<Node> Nodes { get; } = new List<Node>();
+
+        // Kenar listesi (koleksiyon olarak public)
+        public List<Edge> Edges { get; } = new List<Edge>();
+
+        // Hýzlý eriþim için Id -> Node map
+        public Dictionary<int, Node> NodeById { get; } = new Dictionary<int, Node>();
+
+        // Adjacency List: Her node için baðlý olduðu edge'lerin listesi
+        private Dictionary<Node, List<Edge>> adjacencyList = new Dictionary<Node, List<Edge>>();
+
+        
+        /// Adjacency list'e eriþim (read-only)
+        
+        public IReadOnlyDictionary<Node, List<Edge>> AdjacencyList => adjacencyList;
+
+        
+        /// Graph'a yeni bir node ekler
+        
+        /// <param name="node">Eklenecek node</param>
+        /// <exception cref="InvalidOperationException">Ayný ID'ye sahip node zaten varsa</exception>
+        public void AddNode(Node node)
+        {
+            if (node == null)
+                throw new ArgumentNullException(nameof(node));
+
+            // Duplicate node kontrolü
+            if (NodeById.ContainsKey(node.Id))
+                throw new InvalidOperationException($"Node with Id {node.Id} already exists.");
+
+            Nodes.Add(node);
+            NodeById[node.Id] = node;
+            adjacencyList[node] = new List<Edge>();
+        }
+
+        
+        /// Ýki node arasýnda edge oluþturur
+        /// Weight'i otomatik olarak WeightCalculator ile hesaplar
+        
+        /// <param name="fromId">Kaynak node ID</param>
+        /// <param name="toId">Hedef node ID</param>
+        /// <param name="isDirected">Yönlü edge mi? (Default: false)</param>
+        /// <exception cref="InvalidOperationException">Node'lar yoksa veya self-loop ise</exception>
+        public void AddEdge(int fromId, int toId, bool isDirected = false)
+        {
+            // Node'larýn varlýk kontrolü
+            if (!NodeById.ContainsKey(fromId) || !NodeById.ContainsKey(toId))
+                throw new InvalidOperationException("Both nodes must exist before adding an edge.");
+
+            // Self-loop kontrolü
+            if (fromId == toId)
+                throw new InvalidOperationException($"Self-loop is not allowed. Cannot add edge from node {fromId} to itself.");
+
+            var fromNode = NodeById[fromId];
+            var toNode = NodeById[toId];
+
+            // Weight'i WeightCalculator ile hesapla
+            double weight = WeightCalculator.Calculate(fromNode, toNode);
+
+            // Edge oluþtur
+            var edge = new Edge
+            {
+                FromNodeId = fromId,
+                ToNodeId = toId,
+                Weight = weight,
+                IsDirected = isDirected
+            };
+
+            Edges.Add(edge);
+
+            // Adjacency list'e ekle
+            adjacencyList[fromNode].Add(edge);
+
+            // Komþuluk listelerini güncelle
+            if (!fromNode.Neighbors.Contains(toId))
+                fromNode.Neighbors.Add(toId);
+
+            // Undirected ise ters yönü de ekle
+            if (!isDirected)
+            {
+                var reverseEdge = new Edge
+                {
+                    FromNodeId = toId,
+                    ToNodeId = fromId,
+                    Weight = weight,
+                    IsDirected = false
+                };
+
+                Edges.Add(reverseEdge);
+                adjacencyList[toNode].Add(reverseEdge);
+
+                if (!toNode.Neighbors.Contains(fromId))
+                    toNode.Neighbors.Add(fromId);
+            }
+        }
+
+        
+        /// Manuel weight ile edge ekler (WeightCalculator kullanmadan)
+        
+        public void AddEdge(int fromId, int toId, double weight, bool isDirected = false)
+        {
+            // Node'larýn varlýk kontrolü
+            if (!NodeById.ContainsKey(fromId) || !NodeById.ContainsKey(toId))
+                throw new InvalidOperationException("Both nodes must exist before adding an edge.");
+
+            // Self-loop kontrolü
+            if (fromId == toId)
+                throw new InvalidOperationException($"Self-loop is not allowed. Cannot add edge from node {fromId} to itself.");
+
+            var fromNode = NodeById[fromId];
+            var toNode = NodeById[toId];
+
+            var edge = new Edge
+            {
+                FromNodeId = fromId,
+                ToNodeId = toId,
+                Weight = weight,
+                IsDirected = isDirected
+            };
+
+            Edges.Add(edge);
+            adjacencyList[fromNode].Add(edge);
+
+            if (!fromNode.Neighbors.Contains(toId))
+                fromNode.Neighbors.Add(toId);
+
+            if (!isDirected)
+            {
+                var reverseEdge = new Edge
+                {
+                    FromNodeId = toId,
+                    ToNodeId = fromId,
+                    Weight = weight,
+                    IsDirected = false
+                };
+
+                Edges.Add(reverseEdge);
+                adjacencyList[toNode].Add(reverseEdge);
+
+                if (!toNode.Neighbors.Contains(fromId))
+                    toNode.Neighbors.Add(fromId);
+            }
+        }
+
+        
+        /// Bir node'un komþularýna giden edge'leri döndürür
+        
+        public List<Edge> GetEdges(Node node)
+        {
+            if (node == null)
+                throw new ArgumentNullException(nameof(node));
+
+            return adjacencyList.ContainsKey(node) ? adjacencyList[node] : new List<Edge>();
+        }
+
+        
+        /// ID'ye göre node döndürür
+        
+        public Node? GetNode(int id)
+        {
+            NodeById.TryGetValue(id, out var node);
+            return node;
+        }
+
+       
+        /// Ýki node arasýnda edge olup olmadýðýný kontrol eder
+        
+        public bool EdgeExists(int fromId, int toId)
+        {
+            if (!NodeById.ContainsKey(fromId))
+                return false;
+
+            var fromNode = NodeById[fromId];
+            return adjacencyList.ContainsKey(fromNode) && 
+                   adjacencyList[fromNode].Any(e => e.ToNodeId == toId);
+        }
+
+        
+        /// Bir node'u ve iliþkili tüm edge'leri siler
+        
+        public bool RemoveNode(int nodeId)
+        {
+            if (!NodeById.ContainsKey(nodeId))
+                return false;
+
+            var node = NodeById[nodeId];
+
+            // Bu node'a baðlý tüm edge'leri sil
+            Edges.RemoveAll(e => e.FromNodeId == nodeId || e.ToNodeId == nodeId);
+
+            // Diðer node'larýn komþu listelerinden bu node'u çýkar
+            foreach (var otherNode in Nodes)
+            {
+                otherNode.Neighbors.Remove(nodeId);
+                if (adjacencyList.ContainsKey(otherNode))
+                {
+                    adjacencyList[otherNode].RemoveAll(e => e.ToNodeId == nodeId);
+                }
+            }
+
+            // Node'u kaldýr
+            adjacencyList.Remove(node);
+            NodeById.Remove(nodeId);
+            Nodes.Remove(node);
+
+            return true;
+        }
+
+        
+        /// Ýki node arasýndaki edge'i siler
+        
+        public bool RemoveEdge(int fromId, int toId)
+        {
+            if (!NodeById.ContainsKey(fromId) || !NodeById.ContainsKey(toId))
+                return false;
+
+            var fromNode = NodeById[fromId];
+            var toNode = NodeById[toId];
+
+            // Edge'leri kaldýr (her iki yön)
+            int removed = Edges.RemoveAll(e => 
+                (e.FromNodeId == fromId && e.ToNodeId == toId) ||
+                (e.FromNodeId == toId && e.ToNodeId == fromId));
+
+            if (removed == 0)
+                return false;
+
+            // Adjacency list'ten kaldýr
+            if (adjacencyList.ContainsKey(fromNode))
+                adjacencyList[fromNode].RemoveAll(e => e.ToNodeId == toId);
+            if (adjacencyList.ContainsKey(toNode))
+                adjacencyList[toNode].RemoveAll(e => e.ToNodeId == fromId);
+
+            // Komþu listelerini güncelle
+            fromNode.Neighbors.Remove(toId);
+            toNode.Neighbors.Remove(fromId);
+
+            return true;
+        }
+
+        
+        /// Graf boþ mu kontrol eder
+        
+        public bool IsEmpty()
+        {
+            return Nodes.Count == 0;
+        }
+
+        
+        /// Tüm node ve edge'leri temizler
+        
+        public void Clear()
+        {
+            Nodes.Clear();
+            Edges.Clear();
+            NodeById.Clear();
+            adjacencyList.Clear();
+        }
+
+        
+        /// Graf istatistiklerini döndürür
+        
+        public (int NodeCount, int EdgeCount, double Density, double AvgDegree) GetStatistics()
+        {
+            int nodeCount = Nodes.Count;
+            int edgeCount = Edges.Count / 2; // Undirected
+
+            double density = 0;
+            double avgDegree = 0;
+
+            if (nodeCount > 1)
+            {
+                double maxEdges = (double)nodeCount * (nodeCount - 1) / 2;
+                density = edgeCount / maxEdges;
+                avgDegree = Nodes.Average(n => n.Neighbors.Count);
+            }
+
+            return (nodeCount, edgeCount, density, avgDegree);
+        }
+    }
+}
+
+
+
+===============================
+Node.cs
+===============================
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace SNA.GraphAlgorithms.Core.Models
+{
+    public class Node
+    {
+        public int Id { get; set; }
+
+        // Ýleride isme göre arama vs. için
+        public string Name { get; set; } = string.Empty;
+
+        // Projedeki özellikler
+        public double Activity { get; set; }      // Aktiflik
+        public int InteractionCount { get; set; } // Etkileþim
+        public int ConnectionCount { get; set; }  // Baðlantý sayýsý (degree)
+
+        // Komþu düðümlerin Id'leri
+        public List<int> Neighbors { get; set; } = new List<int>();
+
+        // A* algoritmasý için opsiyonel pozisyon bilgisi
+        // Eðer set edilmezse (0,0) olarak kalýr
+        public double X { get; set; } = 0;
+        public double Y { get; set; } = 0;
+
+        
+        /// Ýki node arasýndaki Euclidean distance'ý hesaplar
+        /// A* heuristic için kullanýlýr
+        
+        public double DistanceTo(Node other)
+        {
+            if (other == null)
+                throw new ArgumentNullException(nameof(other));
+
+            double dx = X - other.X;
+            double dy = Y - other.Y;
+            return Math.Sqrt(dx * dx + dy * dy);
+        }
+    }
+}
+
+
+
+===============================
+WeightCalculator.cs
+===============================
+using SNA.GraphAlgorithms.Core.Models;
+using System;
+
+namespace SNA.GraphAlgorithms.Core.Services
+{
+    
+    /// Ä°ki node arasÄ±ndaki edge weight'ini hesaplayan statik servis
+    
+    public static class WeightCalculator
+    {
+        
+        /// Ä°ki node arasÄ±ndaki aÄŸÄ±rlÄ±ÄŸÄ± hesaplar
+        /// FormÃ¼l: weight(i,j) = 1 / (1 + (Activity_i - Activity_j)^2 + (Interaction_i - Interaction_j)^2 + (Connection_i - Connection_j)^2)
+        
+        /// <param name="nodeA">Ä°lk node</param>
+        /// <param name="nodeB">Ä°kinci node</param>
+        /// <returns>Hesaplanan aÄŸÄ±rlÄ±k deÄŸeri (0-1 arasÄ±)</returns>
+        public static double Calculate(Node nodeA, Node nodeB)
+        {
+            if (nodeA == null)
+                throw new ArgumentNullException(nameof(nodeA));
+            if (nodeB == null)
+                throw new ArgumentNullException(nameof(nodeB));
+
+            // Ã–zellik farklarÄ±nÄ±n karesi
+            double activityDiff = Math.Pow(nodeA.Activity - nodeB.Activity, 2);
+            double interactionDiff = Math.Pow(nodeA.InteractionCount - nodeB.InteractionCount, 2);
+            double connectionDiff = Math.Pow(nodeA.ConnectionCount - nodeB.ConnectionCount, 2);
+
+            // FormÃ¼l: 1 / (1 + toplam_fark)
+            double weight = 1.0 / (1.0 + activityDiff + interactionDiff + connectionDiff);
+
+            return weight;
+        }
+    }
+}
+
+
+===============================
+CsvLoader.cs
+===============================
+using SNA.GraphAlgorithms.Core.Models;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+
+namespace SNA.GraphAlgorithms.Infrastructure.FileServices
+{
+    
+    /// CSV dosyasýndan veri okuyarak Node listesi oluþturur
+    /// SRP: Sadece CSV okuma ve Node oluþturma sorumluluðu
+    
+    public class CsvLoader
+    {
+        
+        /// CSV dosyasýndan node'larý okur
+        /// Expected CSV format: Id,Name,Activity,InteractionCount,ConnectionCount
+        
+        /// <param name="filePath">CSV dosya yolu</param>
+        /// <returns>Oluþturulan node listesi</returns>
+        public List<Node> LoadNodes(string filePath)
+        {
+            if (string.IsNullOrWhiteSpace(filePath))
+                throw new ArgumentException("File path cannot be null or empty.", nameof(filePath));
+
+            if (!File.Exists(filePath))
+                throw new FileNotFoundException($"CSV file not found: {filePath}");
+
+            var nodes = new List<Node>();
+
+            using (var reader = new StreamReader(filePath))
+            {
+                // Ýlk satýrý oku (header)
+                string? headerLine = reader.ReadLine();
+                if (headerLine == null)
+                    throw new InvalidDataException("CSV file is empty.");
+
+                // Veri satýrlarýný oku
+                int lineNumber = 1;
+                while (!reader.EndOfStream)
+                {
+                    lineNumber++;
+                    string? line = reader.ReadLine();
+                    if (string.IsNullOrWhiteSpace(line))
+                        continue;
+
+                    try
+                    {
+                        var node = ParseNodeFromCsvLine(line);
+                        nodes.Add(node);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new InvalidDataException($"Error parsing line {lineNumber}: {line}", ex);
+                    }
+                }
+            }
+
+            return nodes;
+        }
+
+        
+        /// CSV satýrýndan Node oluþturur
+        
+        private Node ParseNodeFromCsvLine(string line)
+        {
+            string[] columns = line.Split(',');
+
+            if (columns.Length < 5)
+                throw new FormatException($"Invalid CSV format. Expected at least 5 columns, got {columns.Length}");
+
+            var node = new Node
+            {
+                Id = int.Parse(columns[0].Trim(), CultureInfo.InvariantCulture),
+                Name = columns[1].Trim(),
+                Activity = double.Parse(columns[2].Trim(), CultureInfo.InvariantCulture),
+                InteractionCount = int.Parse(columns[3].Trim(), CultureInfo.InvariantCulture),
+                ConnectionCount = int.Parse(columns[4].Trim(), CultureInfo.InvariantCulture)
+            };
+
+            return node;
+        }
+
+        
+        /// CSV'den node'larý okur ve Graph oluþturur
+        /// Graph, edge'leri otomatik olarak WeightCalculator ile hesaplar
+        
+        /// <param name="filePath">CSV dosya yolu</param>
+        /// <param name="createFullyConnected">Tüm node'larý birbirine baðla (tam baðlý graph)</param>
+        /// <returns>Oluþturulan Graph</returns>
+        public Graph LoadGraph(string filePath, bool createFullyConnected = false)
+        {
+            var nodes = LoadNodes(filePath);
+            var graph = new Graph();
+
+            // Node'larý graph'a ekle
+            foreach (var node in nodes)
+            {
+                graph.AddNode(node);
+            }
+
+            // Ýsteðe baðlý: Tam baðlý graph oluþtur
+            if (createFullyConnected)
+            {
+                CreateFullyConnectedGraph(graph, nodes);
+            }
+
+            return graph;
+        }
+
+        
+        /// Tüm node'larý birbirine baðlar (tam baðlý graph)
+        /// Weight'ler otomatik olarak Graph tarafýndan hesaplanýr
+        
+        private void CreateFullyConnectedGraph(Graph graph, List<Node> nodes)
+        {
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                for (int j = i + 1; j < nodes.Count; j++)
+                {
+                    // Graph.AddEdge otomatik olarak WeightCalculator kullanýr
+                    graph.AddEdge(nodes[i].Id, nodes[j].Id, isDirected: false);
+                }
+            }
+        }
+    }
+}
+
+
+
+===============================
+GraphExporter.cs
+===============================
+using SNA.GraphAlgorithms.Core.Models;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Text.Json;
+using System.Linq;
+
+namespace SNA.GraphAlgorithms.Infrastructure.FileServices
+{
+    
+    /// Graf verilerini farklÄ± formatlarda dÄ±ÅŸa aktarÄ±r
+    /// JSON, CSV ve Adjacency Matrix formatlarÄ±nÄ± destekler
+    
+    public class GraphExporter
+    {
+        
+        /// GrafÄ± JSON formatÄ±nda dÄ±ÅŸa aktarÄ±r
+        
+        /// <param name="graph">DÄ±ÅŸa aktarÄ±lacak graf</param>
+        /// <param name="filePath">Hedef dosya yolu</param>
+        public void ExportToJson(Graph graph, string filePath)
+        {
+            if (graph == null)
+                throw new ArgumentNullException(nameof(graph));
+            if (string.IsNullOrWhiteSpace(filePath))
+                throw new ArgumentException("File path cannot be null or empty.", nameof(filePath));
+
+            var graphData = new
+            {
+                Nodes = graph.Nodes.Select(n => new
+                {
+                    n.Id,
+                    n.Name,
+                    n.Activity,
+                    n.InteractionCount,
+                    n.ConnectionCount,
+                    n.X,
+                    n.Y,
+                    n.Neighbors
+                }).ToList(),
+                Edges = graph.Edges
+                    .Where(e => e.FromNodeId < e.ToNodeId) // Duplicate'leri Ã¶nle (undirected)
+                    .Select(e => new
+                    {
+                        e.FromNodeId,
+                        e.ToNodeId,
+                        e.Weight,
+                        e.IsDirected
+                    }).ToList(),
+                Metadata = new
+                {
+                    NodeCount = graph.Nodes.Count,
+                    EdgeCount = graph.Edges.Count / 2, // Undirected
+                    ExportDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                }
+            };
+
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true
+            };
+
+            string jsonString = JsonSerializer.Serialize(graphData, options);
+            File.WriteAllText(filePath, jsonString);
+        }
+
+        
+        /// Graf dÃ¼ÄŸÃ¼mlerini CSV formatÄ±nda dÄ±ÅŸa aktarÄ±r
+        
+        public void ExportNodesToCsv(Graph graph, string filePath)
+        {
+            if (graph == null)
+                throw new ArgumentNullException(nameof(graph));
+            if (string.IsNullOrWhiteSpace(filePath))
+                throw new ArgumentException("File path cannot be null or empty.", nameof(filePath));
+
+            var sb = new StringBuilder();
+            sb.AppendLine("Id,Name,Activity,InteractionCount,ConnectionCount,X,Y,Degree");
+
+            foreach (var node in graph.Nodes)
+            {
+                sb.AppendLine($"{node.Id},{EscapeCsv(node.Name)},{node.Activity},{node.InteractionCount},{node.ConnectionCount},{node.X},{node.Y},{node.Neighbors.Count}");
+            }
+
+            File.WriteAllText(filePath, sb.ToString());
+        }
+
+        
+        /// Graf kenarlarÄ±nÄ± CSV formatÄ±nda dÄ±ÅŸa aktarÄ±r
+        
+        public void ExportEdgesToCsv(Graph graph, string filePath)
+        {
+            if (graph == null)
+                throw new ArgumentNullException(nameof(graph));
+            if (string.IsNullOrWhiteSpace(filePath))
+                throw new ArgumentException("File path cannot be null or empty.", nameof(filePath));
+
+            var sb = new StringBuilder();
+            sb.AppendLine("FromNodeId,ToNodeId,Weight,FromNodeName,ToNodeName");
+
+            // Duplicate edge'leri Ã¶nle (sadece FromNodeId < ToNodeId olanlarÄ± yaz)
+            var writtenEdges = new HashSet<string>();
+            foreach (var edge in graph.Edges)
+            {
+                string key = $"{Math.Min(edge.FromNodeId, edge.ToNodeId)}-{Math.Max(edge.FromNodeId, edge.ToNodeId)}";
+                if (!writtenEdges.Contains(key))
+                {
+                    var fromNode = graph.GetNode(edge.FromNodeId);
+                    var toNode = graph.GetNode(edge.ToNodeId);
+                    sb.AppendLine($"{edge.FromNodeId},{edge.ToNodeId},{edge.Weight:F6},{EscapeCsv(fromNode?.Name ?? "")},{EscapeCsv(toNode?.Name ?? "")}");
+                    writtenEdges.Add(key);
+                }
+            }
+
+            File.WriteAllText(filePath, sb.ToString());
+        }
+
+        
+        /// KomÅŸuluk listesini (Adjacency List) text formatÄ±nda dÄ±ÅŸa aktarÄ±r
+        
+        public void ExportAdjacencyList(Graph graph, string filePath)
+        {
+            if (graph == null)
+                throw new ArgumentNullException(nameof(graph));
+            if (string.IsNullOrWhiteSpace(filePath))
+                throw new ArgumentException("File path cannot be null or empty.", nameof(filePath));
+
+            var sb = new StringBuilder();
+            sb.AppendLine("=== ADJACENCY LIST ===");
+            sb.AppendLine($"Generated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            sb.AppendLine($"Nodes: {graph.Nodes.Count}, Edges: {graph.Edges.Count / 2}");
+            sb.AppendLine();
+
+            foreach (var node in graph.Nodes.OrderBy(n => n.Id))
+            {
+                var edges = graph.GetEdges(node);
+                var neighborInfo = edges.Select(e =>
+                {
+                    var neighbor = graph.GetNode(e.ToNodeId);
+                    return $"{neighbor?.Name ?? e.ToNodeId.ToString()}(w:{e.Weight:F4})";
+                });
+
+                sb.AppendLine($"{node.Name} (ID:{node.Id}) -> [{string.Join(", ", neighborInfo)}]");
+            }
+
+            File.WriteAllText(filePath, sb.ToString());
+        }
+
+        /
+        /// KomÅŸuluk matrisini (Adjacency Matrix) dÄ±ÅŸa aktarÄ±r
+        
+        public void ExportAdjacencyMatrix(Graph graph, string filePath)
+        {
+            if (graph == null)
+                throw new ArgumentNullException(nameof(graph));
+            if (string.IsNullOrWhiteSpace(filePath))
+                throw new ArgumentException("File path cannot be null or empty.", nameof(filePath));
+
+            var matrix = GetAdjacencyMatrix(graph);
+            var nodeIds = graph.Nodes.OrderBy(n => n.Id).Select(n => n.Id).ToList();
+
+            var sb = new StringBuilder();
+            sb.AppendLine("=== ADJACENCY MATRIX ===");
+            sb.AppendLine($"Generated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            sb.AppendLine($"Nodes: {graph.Nodes.Count}");
+            sb.AppendLine();
+
+            // Header (node IDs)
+            sb.Append("     ");
+            foreach (int id in nodeIds)
+            {
+                sb.Append($"{id,8}");
+            }
+            sb.AppendLine();
+
+            // Matrix rows
+            for (int i = 0; i < nodeIds.Count; i++)
+            {
+                sb.Append($"{nodeIds[i],4} ");
+                for (int j = 0; j < nodeIds.Count; j++)
+                {
+                    double weight = matrix[i, j];
+                    if (weight == 0)
+                        sb.Append($"{"0",8}");
+                    else
+                        sb.Append($"{weight,8:F4}");
+                }
+                sb.AppendLine();
+            }
+
+            File.WriteAllText(filePath, sb.ToString());
+        }
+
+        
+        /// KomÅŸuluk matrisini CSV formatÄ±nda dÄ±ÅŸa aktarÄ±r
+        
+        public void ExportAdjacencyMatrixCsv(Graph graph, string filePath)
+        {
+            if (graph == null)
+                throw new ArgumentNullException(nameof(graph));
+
+            var matrix = GetAdjacencyMatrix(graph);
+            var nodeIds = graph.Nodes.OrderBy(n => n.Id).Select(n => n.Id).ToList();
+
+            var sb = new StringBuilder();
+
+            // Header
+            sb.Append(",");
+            sb.AppendLine(string.Join(",", nodeIds));
+
+            // Rows
+            for (int i = 0; i < nodeIds.Count; i++)
+            {
+                sb.Append($"{nodeIds[i]},");
+                var row = new List<string>();
+                for (int j = 0; j < nodeIds.Count; j++)
+                {
+                    row.Add(matrix[i, j].ToString("F4"));
+                }
+                sb.AppendLine(string.Join(",", row));
+            }
+
+            File.WriteAllText(filePath, sb.ToString());
+        }
+
+        
+        /// TÃ¼m verileri tek bir klasÃ¶re dÄ±ÅŸa aktarÄ±r
+        
+        public void ExportAll(Graph graph, string directoryPath)
+        {
+            if (!Directory.Exists(directoryPath))
+                Directory.CreateDirectory(directoryPath);
+
+            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+
+            ExportToJson(graph, Path.Combine(directoryPath, $"graph_{timestamp}.json"));
+            ExportNodesToCsv(graph, Path.Combine(directoryPath, $"nodes_{timestamp}.csv"));
+            ExportEdgesToCsv(graph, Path.Combine(directoryPath, $"edges_{timestamp}.csv"));
+            ExportAdjacencyList(graph, Path.Combine(directoryPath, $"adjacency_list_{timestamp}.txt"));
+            ExportAdjacencyMatrix(graph, Path.Combine(directoryPath, $"adjacency_matrix_{timestamp}.txt"));
+            ExportAdjacencyMatrixCsv(graph, Path.Combine(directoryPath, $"adjacency_matrix_{timestamp}.csv"));
+        }
+
+        
+        /// GrafÄ±n komÅŸuluk matrisini hesaplar
+        
+        public double[,] GetAdjacencyMatrix(Graph graph)
+        {
+            var nodeIds = graph.Nodes.OrderBy(n => n.Id).Select(n => n.Id).ToList();
+            var idToIndex = new Dictionary<int, int>();
+            for (int i = 0; i < nodeIds.Count; i++)
+            {
+                idToIndex[nodeIds[i]] = i;
+            }
+
+            int n = nodeIds.Count;
+            var matrix = new double[n, n];
+
+            foreach (var edge in graph.Edges)
+            {
+                if (idToIndex.ContainsKey(edge.FromNodeId) && idToIndex.ContainsKey(edge.ToNodeId))
+                {
+                    int i = idToIndex[edge.FromNodeId];
+                    int j = idToIndex[edge.ToNodeId];
+                    matrix[i, j] = edge.Weight;
+                }
+            }
+
+            return matrix;
+        }
+
+        
+        /// CSV iÃ§in string escape iÅŸlemi
+        
+        private string EscapeCsv(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return "";
+
+            if (value.Contains(",") || value.Contains("\"") || value.Contains("\n"))
+            {
+                return $"\"{value.Replace("\"", "\"\"")}\"";
+            }
+            return value;
+        }
+    }
+}
+
+
