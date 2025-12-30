@@ -497,6 +497,13 @@ Bu proje harici bir package kullanmamaktadır. Tamamen .NET standard library ile
 
 ---
 
+## Proje Üyeleri
+  
+- İbrahim KIZILARSLAN
+- Cihat KARATAŞ
+
+---
+
 ## 👨‍🎓 Proje Bilgileri
 
 - **Ders**: Yazılım Geliştirme Laboratuvarı-I
