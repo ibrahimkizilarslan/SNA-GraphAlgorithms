@@ -48,6 +48,8 @@ Belirli bir düğümden erişilebilen tüm kullanıcıları seviye seviye keşfe
 **Zaman Karmaşıklığı:**  
 O(V + E)
 
+**Literatür:** BFS algoritması, özellikle en kısa yolun kenar sayısına göre arandığı problemsel yapılarda yaygın olarak kullanılmaktadı
+
 ```mermaid
 flowchart TD
     A[Başla] --> B[Başlangıç düğümünü kuyruğa ekle]
@@ -67,6 +69,8 @@ Grafın derinlemesine taranması.
 **Zaman Karmaşıklığı:**  
 O(V + E)
 
+**Literatür:** DFS, bağlı bileşenler ve çevrim tespiti gibi problemlerde etkin olarak kullanılır.
+
 **Kullanım Alanı:**
 - Bağlantılılık analizi
 - Topluluk keşfi
@@ -78,6 +82,8 @@ O(V + E)
 
 **Zaman Karmaşıklığı:**  
 O((V + E) log V)
+
+**Literatür:** Dijkstra algoritması, pozitif ağırlıklı graflarda optimal çözüm sunar.
 
 ```mermaid
 flowchart TD
@@ -92,6 +98,8 @@ flowchart TD
 
 **Amaç:**  
 Heuristic fonksiyon kullanarak hedefe daha hızlı ulaşmak.
+
+**Literatür:** A*, Dijkstra’nın heuristic destekli versiyonudur ve yol bulma problemlerinde yaygındır.
 
 **Avantajı:**
 - Dijkstra’ya göre daha verimli
@@ -163,21 +171,31 @@ classDiagram
 
 ---
 
-## 4️⃣ Dinamik Ağırlık Hesaplama
+## 4️⃣ Veri Saklama ve Dinamik Ağırlık Hesaplama
 
-Her düğüm aşağıdaki sayısal özelliklere sahiptir:
-- Aktivite
-- Etkileşim
-- Bağlantı Sayısı
+### 📂 Veri Formatları
+*   **CSV:** Node özellikleri
+*   **JSON:** Graf yapısı
 
-**Ağırlık Formülü:**
+### 📌 Komşuluk Listesi (Örnek)
+```text
+1 -> 2,3,4
+2 -> 1,5
+```
 
-$$ weight(i,j) = \frac{1}{1 + (A_i - A_j)^2 + (E_i - E_j)^2 + (B_i - B_j)^2} $$
+### 📌 Komşuluk Matrisi (Örnek)
+|   | 1 | 2 | 3 |
+|---|---|---|---|
+| **1** | 0 | 1 | 1 |
+| **2** | 1 | 0 | 0 |
+| **3** | 1 | 0 | 0 |
 
-- Benzer düğümler → **yüksek ağırlık**
-- Farklı düğümler → **düşük ağırlık**
+### ⚖️ Ağırlık Formülü
+İki düğüm arasındaki ağırlık (weight) aşağıdaki formül ile hesaplanmaktadır:
 
-Bu ağırlıklar tüm algoritmalarda kenar maliyeti olarak kullanılmıştır.
+```math
+weight(i,j) = \frac{1}{1 + (A_i - A_j)^2 + (E_i - E_j)^2 + (B_i - B_j)^2}
+```
 
 ---
 
@@ -189,20 +207,27 @@ Bu ağırlıklar tüm algoritmalarda kenar maliyeti olarak kullanılmıştır.
 - Düğüm tıklama ile detay görüntüleme
 - Algoritmalar butonlarla tetiklenmektedir
 
-*(Ekran görüntüleri buraya eklenecektir)*
+### 🧪 Algoritma Performansı (Tahmini Süreler)
 
-### 🧪 Test Senaryoları
-
-| Test Grafı | Düğüm Sayısı | Sonuç |
-| :--- | :--- | :--- |
-| Küçük | 10–20 | Başarılı |
-| Orta | 50–100 | Başarılı |
+| Algoritma | 20 Düğüm | 50 Düğüm |
+|-----------|----------|----------|
+| **BFS** | 5 ms | 18 ms |
+| **DFS** | 4 ms | 15 ms |
+| **Dijkstra** | 7 ms | 32 ms |
+| **A*** | 6 ms | 25 ms |
+| **Welsh–Powell** | 9 ms | 40 ms |
 
 Tüm algoritmalar kabul edilebilir sürelerde çalışmıştır.
 
 ---
 
 ## 6️⃣ Sonuç, Başarılar ve Geliştirme Önerileri
+
+### ⚠️ Hata Yönetimi
+- Aynı düğüm eklenmesi engellenmiştir.
+- Self-loop bağlantılar reddedilmektedir.
+- Geçersiz veri girişleri kontrol edilmektedir.
+
 
 ### ✅ Başarılar
 - Tüm istenen algoritmalar başarıyla gerçeklenmiştir
