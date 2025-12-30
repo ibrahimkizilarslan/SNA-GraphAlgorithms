@@ -497,7 +497,7 @@ Bu proje harici bir package kullanmamaktadır. Tamamen .NET standard library ile
 
 ---
 
-## Proje Üyeleri
+## 🧑‍🎓 Proje Üyeleri
   
 - İbrahim KIZILARSLAN
 - Cihat KARATAŞ
