@@ -5,6 +5,7 @@
 **Üniversite:** Kocaeli Üniversitesi – Teknoloji Fakültesi  
 **Bölüm:** Bilişim Sistemleri Mühendisliği  
 **Proje:** Proje–2  
+**Grup:** 46
 
 **Ekip Üyeleri:**  
 - Cihat KARATAŞ 231307078
