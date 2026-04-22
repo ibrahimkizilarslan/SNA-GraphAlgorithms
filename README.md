@@ -160,9 +160,3 @@ $$weight(i,j) = \frac{1}{1 + (A_i - A_j)^2 + (I_i - I_j)^2 + (C_i - C_j)^2}$$
 
 ## 📜 License
 Integrated under the MIT License. Feel free to use this project for your own research or development.
-
----
-
-## 👥 Contributors
-- [İbrahim KIZILARSLAN](https://github.com/ibrahimkizilarslan)
-- [Cihat KARATAŞ](https://github.com/cihatkaratas)
