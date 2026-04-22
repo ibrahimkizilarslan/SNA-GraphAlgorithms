@@ -155,8 +155,3 @@ $$weight(i,j) = \frac{1}{1 + (A_i - A_j)^2 + (I_i - I_j)^2 + (C_i - C_j)^2}$$
 - **Single Responsibility (SRP):** Each class handles one specific logic (e.g., FileServices vs. Algorithms).
 - **Open/Closed (OCP):** New algorithms can be added by implementing `IGraphAlgorithm` without modifying existing code.
 - **Dependency Inversion (DIP):** High-level modules depend on abstractions, not concrete implementations.
-
----
-
-## 📜 License
-Integrated under the MIT License. Feel free to use this project for your own research or development.
