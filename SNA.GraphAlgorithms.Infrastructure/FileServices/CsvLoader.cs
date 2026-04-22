@@ -1,4 +1,4 @@
-﻿using SNA.GraphAlgorithms.Core.Models;
+using SNA.GraphAlgorithms.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -7,17 +7,17 @@ using System.IO;
 namespace SNA.GraphAlgorithms.Infrastructure.FileServices
 {
     
-    /// CSV dosyasından veri okuyarak Node listesi oluşturur
-    /// SRP: Sadece CSV okuma ve Node oluşturma sorumluluğu
+    /// Loads data from CSV file and creates Node list
+    /// SRP: Responsibility for CSV reading and Node creation
     
     public class CsvLoader
     {
         
-        /// CSV dosyasından node'ları okur
+        /// Reads nodes from CSV file
         /// Expected CSV format: Id,Name,Activity,InteractionCount,ConnectionCount
         
-        /// <param name="filePath">CSV dosya yolu</param>
-        /// <returns>Oluşturulan node listesi</returns>
+        /// <param name="filePath">CSV file path</param>
+        /// <returns>Created node list</returns>
         public List<Node> LoadNodes(string filePath)
         {
             if (string.IsNullOrWhiteSpace(filePath))
@@ -30,12 +30,12 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
 
             using (var reader = new StreamReader(filePath))
             {
-                // İlk satırı oku (header)
+                // Read first line (header)
                 string? headerLine = reader.ReadLine();
                 if (headerLine == null)
                     throw new InvalidDataException("CSV file is empty.");
 
-                // Veri satırlarını oku
+                // Read data lines
                 int lineNumber = 1;
                 while (!reader.EndOfStream)
                 {
@@ -60,7 +60,7 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
         }
 
         
-        /// CSV satırından Node oluşturur
+        /// Creates Node from CSV line
         
         private Node ParseNodeFromCsvLine(string line)
         {
@@ -82,24 +82,24 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
         }
 
         
-        /// CSV'den node'ları okur ve Graph oluşturur
-        /// Graph, edge'leri otomatik olarak WeightCalculator ile hesaplar
+        /// Reads nodes from CSV and creates Graph
+        /// Graph automatically calculates edges using WeightCalculator
         
-        /// <param name="filePath">CSV dosya yolu</param>
-        /// <param name="createFullyConnected">Tüm node'ları birbirine bağla (tam bağlı graph)</param>
-        /// <returns>Oluşturulan Graph</returns>
+        /// <param name="filePath">CSV file path</param>
+        /// <param name="createFullyConnected">Connect all nodes to each other (fully connected graph)</param>
+        /// <returns>Created Graph</returns>
         public Graph LoadGraph(string filePath, bool createFullyConnected = false)
         {
             var nodes = LoadNodes(filePath);
             var graph = new Graph();
 
-            // Node'ları graph'a ekle
+            // Add nodes to graph
             foreach (var node in nodes)
             {
                 graph.AddNode(node);
             }
 
-            // İsteğe bağlı: Tam bağlı graph oluştur
+            // Optional: Create fully connected graph
             if (createFullyConnected)
             {
                 CreateFullyConnectedGraph(graph, nodes);
@@ -109,8 +109,8 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
         }
 
         
-        /// Tüm node'ları birbirine bağlar (tam bağlı graph)
-        /// Weight'ler otomatik olarak Graph tarafından hesaplanır
+        /// Connects all nodes to each other (fully connected graph)
+        /// Weights are automatically calculated by the Graph
         
         private void CreateFullyConnectedGraph(Graph graph, List<Node> nodes)
         {
@@ -118,7 +118,7 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
             {
                 for (int j = i + 1; j < nodes.Count; j++)
                 {
-                    // Graph.AddEdge otomatik olarak WeightCalculator kullanır
+                    // Graph.AddEdge automatically uses WeightCalculator
                     graph.AddEdge(nodes[i].Id, nodes[j].Id, isDirected: false);
                 }
             }

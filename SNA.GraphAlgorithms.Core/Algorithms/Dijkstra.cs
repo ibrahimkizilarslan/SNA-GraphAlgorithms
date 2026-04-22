@@ -6,23 +6,23 @@ using System.Linq;
 namespace SNA.GraphAlgorithms.Core.Algorithms
 {
     /
-    /// Dijkstra's Shortest Path algoritması
-    /// Weighted graph'ta bir node'dan diğer tüm node'lara en kısa yolu bulur
+    /// Dijkstra's Shortest Path algorithm
+    /// Finds the shortest path from a starting node to all other nodes in a weighted graph
     
     public class Dijkstra : IGraphAlgorithm
     {
         public string Name => "Dijkstra's Shortest Path";
 
-        // Son çalıştırmadan kalan mesafe bilgileri
+        // Distance information from last execution
         private Dictionary<int, double> distances = new Dictionary<int, double>();
         private Dictionary<int, int?> previousNodes = new Dictionary<int, int?>();
 
         
-        /// Dijkstra algoritmasını çalıştırır
+        /// Runs Dijkstra's algorithm
         
-        /// <param name="graph">Üzerinde çalışılacak graph</param>
-        /// <param name="startNodeId">Başlangıç düğümü ID</param>
-        /// <returns>Ziyaret edilen düğümlerin ID listesi (shortest path tree sırasına göre)</returns>
+        /// <param name="graph">Graph to operate on</param>
+        /// <param name="startNodeId">Start node ID</param>
+        /// <returns>List of visited node IDs (in Shortest Path Tree order)</returns>
         public List<int> Execute(Graph graph, int startNodeId)
         {
             if (graph == null)
@@ -37,17 +37,17 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
             var visited = new HashSet<int>();
             var visitedOrder = new List<int>();
 
-            // Tüm node'lara sonsuz mesafe ata
+            // Assign infinite distance to all nodes
             foreach (var node in graph.Nodes)
             {
                 distances[node.Id] = double.PositiveInfinity;
                 previousNodes[node.Id] = null;
             }
 
-            // Başlangıç node'unun mesafesi 0
+            // Start node distance is 0
             distances[startNodeId] = 0;
 
-            // Priority queue (mesafeye göre sıralı)
+            // Priority queue (sorted by distance)
             var priorityQueue = new SortedSet<(double distance, int nodeId)>(
                 Comparer<(double, int)>.Create((a, b) =>
                 {
@@ -60,15 +60,15 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
 
             while (priorityQueue.Count > 0)
             {
-                // En kısa mesafeli node'u al
+                // Get node with shortest distance
                 var (currentDistance, currentId) = priorityQueue.Min;
                 priorityQueue.Remove(priorityQueue.Min);
 
-                // Zaten ziyaret edildiyse atla
+                // Skip if already visited
                 if (visited.Contains(currentId))
                     continue;
 
-                // Ziyaret et
+                // Visit node
                 visited.Add(currentId);
                 visitedOrder.Add(currentId);
 
@@ -76,7 +76,7 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
                 if (currentNode == null)
                     continue;
 
-                // Komşuları kontrol et
+                // Check neighbors
                 var edges = graph.GetEdges(currentNode);
                 foreach (var edge in edges)
                 {
@@ -85,20 +85,20 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
                     if (visited.Contains(neighborId))
                         continue;
 
-                    // Yeni mesafe hesapla
+                    // Calculate new distance
                     double newDistance = distances[currentId] + edge.Weight;
 
-                    // Daha kısa bir yol bulunduysa güncelle
+                    // Update if a shorter path is found
                     if (newDistance < distances[neighborId])
                     {
-                        // Eski entry'yi kaldır (varsa)
+                        // Remove old entry (if exists)
                         priorityQueue.Remove((distances[neighborId], neighborId));
 
-                        // Güncelle
+                        // Update
                         distances[neighborId] = newDistance;
                         previousNodes[neighborId] = currentId;
 
-                        // Yeni entry ekle
+                        // Add new entry
                         priorityQueue.Add((newDistance, neighborId));
                     }
                 }
@@ -108,11 +108,11 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
         }
 
         
-        /// Belirli bir hedef node'a en kısa yolu döndürür
-        /// Execute() çalıştırıldıktan sonra kullanılabilir
+        /// Returns the shortest path to a specific target node
+        /// Can be used after Execute() is called
         
-        /// <param name="targetNodeId">Hedef node ID</param>
-        /// <returns>Başlangıçtan hedefe olan yol (node ID listesi)</returns>
+        /// <param name="targetNodeId">Target node ID</param>
+        /// <returns>Path from start to target (List of node IDs)</returns>
         public List<int> GetShortestPath(int targetNodeId)
         {
             if (!previousNodes.ContainsKey(targetNodeId))
@@ -121,25 +121,25 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
             var path = new List<int>();
             int? currentId = targetNodeId;
 
-            // Eğer hedef node'a ulaşılamıyorsa
+            // If target node is unreachable
             if (distances[targetNodeId] == double.PositiveInfinity)
-                return path; // Boş liste
+                return path; // Empty list
 
-            // Geriye doğru yolu takip et
+            // Backtrack the path
             while (currentId.HasValue)
             {
                 path.Add(currentId.Value);
                 currentId = previousNodes[currentId.Value];
             }
 
-            // Yolu ters çevir (başlangıçtan hedefe)
+            // Reverse the path (start to target)
             path.Reverse();
             return path;
         }
 
         
-        /// Belirli bir node'a olan en kısa mesafeyi döndürür
-        /// Execute() çalıştırıldıktan sonra kullanılabilir
+        /// Returns shortest distance to a specific node
+        /// Can be used after Execute() is called
         
         public double GetDistance(int nodeId)
         {
@@ -150,7 +150,7 @@ namespace SNA.GraphAlgorithms.Core.Algorithms
         }
 
         
-        /// Tüm mesafeleri döndürür (debugging için)
+        /// Returns all distances (for debugging/results)
         
         public Dictionary<int, double> GetAllDistances()
         {

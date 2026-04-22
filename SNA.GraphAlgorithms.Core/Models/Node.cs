@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,25 +10,25 @@ namespace SNA.GraphAlgorithms.Core.Models
     {
         public int Id { get; set; }
 
-        // İleride isme göre arama vs. için
+        // For searching by name in the future
         public string Name { get; set; } = string.Empty;
 
-        // Projedeki özellikler
-        public double Activity { get; set; }      // Aktiflik
-        public int InteractionCount { get; set; } // Etkileşim
-        public int ConnectionCount { get; set; }  // Bağlantı sayısı (degree)
+        // SNA Attributes
+        public double Activity { get; set; }      // Node activity level
+        public int InteractionCount { get; set; } // Interaction count
+        public int ConnectionCount { get; set; }  // Degree / total connections
 
-        // Komşu düğümlerin Id'leri
+        // IDs of neighbor nodes
         public List<int> Neighbors { get; set; } = new List<int>();
 
-        // A* algoritması için opsiyonel pozisyon bilgisi
-        // Eğer set edilmezse (0,0) olarak kalır
+        // Optional position data for A* algorithm
+        // Defaults to (0,0) if not set
         public double X { get; set; } = 0;
         public double Y { get; set; } = 0;
 
         
-        /// İki node arasındaki Euclidean distance'ı hesaplar
-        /// A* heuristic için kullanılır
+        /// Calculates Euclidean distance between two nodes
+        /// Used for A* heuristic
         
         public double DistanceTo(Node other)
         {

@@ -1,4 +1,4 @@
-﻿using SNA.GraphAlgorithms.Core.Services;
+using SNA.GraphAlgorithms.Core.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,39 +6,39 @@ using System.Linq;
 namespace SNA.GraphAlgorithms.Core.Models
 {
     
-    /// Undirected weighted graph yapısı
-    /// Adjacency list ile node'ların komşularını ve edge'lerini tutar
+    /// Undirected weighted graph structure
+    /// Uses adjacency list to store neighbors and edge data
     
     public class Graph
     {
-        // Düğüm listesi (koleksiyon olarak public)
+        // Node list (public collection)
         public List<Node> Nodes { get; } = new List<Node>();
 
-        // Kenar listesi (koleksiyon olarak public)
+        // Edge list (public collection)
         public List<Edge> Edges { get; } = new List<Edge>();
 
-        // Hızlı erişim için Id -> Node map
+        // Fast access Map: Id -> Node
         public Dictionary<int, Node> NodeById { get; } = new Dictionary<int, Node>();
 
-        // Adjacency List: Her node için bağlı olduğu edge'lerin listesi
+        // Adjacency List: List of connected edges for each node
         private Dictionary<Node, List<Edge>> adjacencyList = new Dictionary<Node, List<Edge>>();
 
         
-        /// Adjacency list'e erişim (read-only)
+        /// Access to adjacency list (read-only)
         
         public IReadOnlyDictionary<Node, List<Edge>> AdjacencyList => adjacencyList;
 
         
-        /// Graph'a yeni bir node ekler
+        /// Adds a new node to the graph
         
-        /// <param name="node">Eklenecek node</param>
-        /// <exception cref="InvalidOperationException">Aynı ID'ye sahip node zaten varsa</exception>
+        /// <param name="node">Node to add</param>
+        /// <exception cref="InvalidOperationException">If a node with the same ID already exists</exception>
         public void AddNode(Node node)
         {
             if (node == null)
                 throw new ArgumentNullException(nameof(node));
 
-            // Duplicate node kontrolü
+            // Check for duplicate nodes
             if (NodeById.ContainsKey(node.Id))
                 throw new InvalidOperationException($"Node with Id {node.Id} already exists.");
 
@@ -48,30 +48,30 @@ namespace SNA.GraphAlgorithms.Core.Models
         }
 
         
-        /// İki node arasında edge oluşturur
-        /// Weight'i otomatik olarak WeightCalculator ile hesaplar
+        /// Creates an edge between two nodes
+        /// Weight is automatically calculated using WeightCalculator
         
-        /// <param name="fromId">Kaynak node ID</param>
-        /// <param name="toId">Hedef node ID</param>
-        /// <param name="isDirected">Yönlü edge mi? (Default: false)</param>
-        /// <exception cref="InvalidOperationException">Node'lar yoksa veya self-loop ise</exception>
+        /// <param name="fromId">Source node ID</param>
+        /// <param name="toId">Target node ID</param>
+        /// <param name="isDirected">Is the edge directed? (Default: false)</param>
+        /// <exception cref="InvalidOperationException">If nodes do not exist or self-looping is attempted</exception>
         public void AddEdge(int fromId, int toId, bool isDirected = false)
         {
-            // Node'ların varlık kontrolü
+            // Ensure nodes exist
             if (!NodeById.ContainsKey(fromId) || !NodeById.ContainsKey(toId))
                 throw new InvalidOperationException("Both nodes must exist before adding an edge.");
 
-            // Self-loop kontrolü
+            // Prevent self-loops
             if (fromId == toId)
                 throw new InvalidOperationException($"Self-loop is not allowed. Cannot add edge from node {fromId} to itself.");
 
             var fromNode = NodeById[fromId];
             var toNode = NodeById[toId];
 
-            // Weight'i WeightCalculator ile hesapla
+            // Calculate weight using WeightCalculator
             double weight = WeightCalculator.Calculate(fromNode, toNode);
 
-            // Edge oluştur
+            // Create edge
             var edge = new Edge
             {
                 FromNodeId = fromId,
@@ -82,14 +82,14 @@ namespace SNA.GraphAlgorithms.Core.Models
 
             Edges.Add(edge);
 
-            // Adjacency list'e ekle
+            // Add to adjacency list
             adjacencyList[fromNode].Add(edge);
 
-            // Komşuluk listelerini güncelle
+            // Update neighbor lists
             if (!fromNode.Neighbors.Contains(toId))
                 fromNode.Neighbors.Add(toId);
 
-            // Undirected ise ters yönü de ekle
+            // If undirected, add reverse edge too
             if (!isDirected)
             {
                 var reverseEdge = new Edge
@@ -109,15 +109,15 @@ namespace SNA.GraphAlgorithms.Core.Models
         }
 
         
-        /// Manuel weight ile edge ekler (WeightCalculator kullanmadan)
+        /// Adds an edge with manual weight (bypass WeightCalculator)
         
         public void AddEdge(int fromId, int toId, double weight, bool isDirected = false)
         {
-            // Node'ların varlık kontrolü
+            // Ensure nodes exist control
             if (!NodeById.ContainsKey(fromId) || !NodeById.ContainsKey(toId))
                 throw new InvalidOperationException("Both nodes must exist before adding an edge.");
 
-            // Self-loop kontrolü
+            // Self-loop control
             if (fromId == toId)
                 throw new InvalidOperationException($"Self-loop is not allowed. Cannot add edge from node {fromId} to itself.");
 
@@ -157,7 +157,7 @@ namespace SNA.GraphAlgorithms.Core.Models
         }
 
         
-        /// Bir node'un komşularına giden edge'leri döndürür
+        /// Returns edges going to neighbors of a node
         
         public List<Edge> GetEdges(Node node)
         {
@@ -168,7 +168,7 @@ namespace SNA.GraphAlgorithms.Core.Models
         }
 
         
-        /// ID'ye göre node döndürür
+        /// Returns node by ID
         
         public Node? GetNode(int id)
         {
@@ -177,7 +177,7 @@ namespace SNA.GraphAlgorithms.Core.Models
         }
 
        
-        /// İki node arasında edge olup olmadığını kontrol eder
+        /// Checks if an edge exists between two nodes
         
         public bool EdgeExists(int fromId, int toId)
         {
@@ -190,7 +190,7 @@ namespace SNA.GraphAlgorithms.Core.Models
         }
 
         
-        /// Bir node'u ve ilişkili tüm edge'leri siler
+        /// Removes a node and all associated edges
         
         public bool RemoveNode(int nodeId)
         {
@@ -199,10 +199,7 @@ namespace SNA.GraphAlgorithms.Core.Models
 
             var node = NodeById[nodeId];
 
-            // Bu node'a bağlı tüm edge'leri sil
-            Edges.RemoveAll(e => e.FromNodeId == nodeId || e.ToNodeId == nodeId);
-
-            // Diğer node'ların komşu listelerinden bu node'u çıkar
+            // Remove all edges connected to this node
             foreach (var otherNode in Nodes)
             {
                 otherNode.Neighbors.Remove(nodeId);
@@ -212,7 +209,7 @@ namespace SNA.GraphAlgorithms.Core.Models
                 }
             }
 
-            // Node'u kaldır
+            // Remove the node
             adjacencyList.Remove(node);
             NodeById.Remove(nodeId);
             Nodes.Remove(node);
@@ -221,7 +218,7 @@ namespace SNA.GraphAlgorithms.Core.Models
         }
 
         
-        /// İki node arasındaki edge'i siler
+        /// Removes edge between two nodes
         
         public bool RemoveEdge(int fromId, int toId)
         {
@@ -231,7 +228,7 @@ namespace SNA.GraphAlgorithms.Core.Models
             var fromNode = NodeById[fromId];
             var toNode = NodeById[toId];
 
-            // Edge'leri kaldır (her iki yön)
+            // Remove edges (both directions)
             int removed = Edges.RemoveAll(e => 
                 (e.FromNodeId == fromId && e.ToNodeId == toId) ||
                 (e.FromNodeId == toId && e.ToNodeId == fromId));
@@ -239,13 +236,13 @@ namespace SNA.GraphAlgorithms.Core.Models
             if (removed == 0)
                 return false;
 
-            // Adjacency list'ten kaldır
+            // Remove from adjacency list
             if (adjacencyList.ContainsKey(fromNode))
                 adjacencyList[fromNode].RemoveAll(e => e.ToNodeId == toId);
             if (adjacencyList.ContainsKey(toNode))
                 adjacencyList[toNode].RemoveAll(e => e.ToNodeId == fromId);
 
-            // Komşu listelerini güncelle
+            // Update neighbor lists
             fromNode.Neighbors.Remove(toId);
             toNode.Neighbors.Remove(fromId);
 
@@ -253,7 +250,7 @@ namespace SNA.GraphAlgorithms.Core.Models
         }
 
         
-        /// Graf boş mu kontrol eder
+        /// Checks if the graph is empty
         
         public bool IsEmpty()
         {
@@ -261,7 +258,7 @@ namespace SNA.GraphAlgorithms.Core.Models
         }
 
         
-        /// Tüm node ve edge'leri temizler
+        /// Clears all nodes and edges from the graph
         
         public void Clear()
         {
@@ -272,7 +269,7 @@ namespace SNA.GraphAlgorithms.Core.Models
         }
 
         
-        /// Graf istatistiklerini döndürür
+        /// Returns graph statistics (SNA metrics)
         
         public (int NodeCount, int EdgeCount, double Density, double AvgDegree) GetStatistics()
         {

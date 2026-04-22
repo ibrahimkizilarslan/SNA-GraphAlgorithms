@@ -77,8 +77,8 @@ namespace SNA.GraphAlgorithms.App
 
         private void SetupUI()
         {
-            // Form ayarları
-            this.Text = "SNA Graph Algorithms - Sosyal Ağ Analizi";
+            // Form settings
+            this.Text = "SNA Graph Algorithms Dashboard";
             this.Size = new Size(1400, 900);
             this.MinimumSize = new Size(1200, 700);
             this.StartPosition = FormStartPosition.CenterScreen;
@@ -106,49 +106,49 @@ namespace SNA.GraphAlgorithms.App
             menuStrip.BackColor = Color.FromArgb(30, 30, 50);
             menuStrip.ForeColor = Color.White;
 
-            // Dosya Menüsü
-            var fileMenu = new ToolStripMenuItem("Dosya");
+            // File Menu
+            var fileMenu = new ToolStripMenuItem("File");
             fileMenu.ForeColor = Color.White;
-            fileMenu.DropDownItems.Add("CSV Yükle", null, LoadCsvClick);
-            fileMenu.DropDownItems.Add("JSON'a Aktar", null, ExportJsonClick);
-            fileMenu.DropDownItems.Add("CSV'ye Aktar", null, ExportCsvClick);
-            fileMenu.DropDownItems.Add("Tümünü Dışa Aktar", null, ExportAllClick);
+            fileMenu.DropDownItems.Add("Load CSV", null, LoadCsvClick);
+            fileMenu.DropDownItems.Add("Export to JSON", null, ExportJsonClick);
+            fileMenu.DropDownItems.Add("Export to CSV", null, ExportCsvClick);
+            fileMenu.DropDownItems.Add("Export All", null, ExportAllClick);
             fileMenu.DropDownItems.Add(new ToolStripSeparator());
-            fileMenu.DropDownItems.Add("Çıkış", null, (s, e) => Application.Exit());
+            fileMenu.DropDownItems.Add("Exit", null, (s, e) => Application.Exit());
             // Dropdown öğelerini siyah yap
             foreach (ToolStripItem item in fileMenu.DropDownItems)
                 item.ForeColor = Color.Black;
 
-            // Graf Menüsü
-            var graphMenu = new ToolStripMenuItem("Graf");
+            // Graph Menu
+            var graphMenu = new ToolStripMenuItem("Graph");
             graphMenu.ForeColor = Color.White;
-            graphMenu.DropDownItems.Add("Örnek Veri Yükle", null, (s, e) => LoadSampleData());
-            graphMenu.DropDownItems.Add("Grafı Temizle", null, (s, e) => ClearGraph());
-            graphMenu.DropDownItems.Add("Düğüm Ekle", null, AddNodeClick);
-            graphMenu.DropDownItems.Add("Kenar Ekle", null, AddEdgeClick);
+            graphMenu.DropDownItems.Add("Load Sample Data", null, (s, e) => LoadSampleData());
+            graphMenu.DropDownItems.Add("Clear Graph", null, (s, e) => ClearGraph());
+            graphMenu.DropDownItems.Add("Add Node", null, AddNodeClick);
+            graphMenu.DropDownItems.Add("Add Edge", null, AddEdgeClick);
             // Dropdown öğelerini siyah yap
             foreach (ToolStripItem item in graphMenu.DropDownItems)
                 item.ForeColor = Color.Black;
 
-            // Algoritmalar Menüsü
-            var algoMenu = new ToolStripMenuItem("Algoritmalar");
+            // Algorithms Menu
+            var algoMenu = new ToolStripMenuItem("Algorithms");
             algoMenu.ForeColor = Color.White;
-            algoMenu.DropDownItems.Add("BFS Çalıştır", null, (s, e) => RunAlgorithm("BFS"));
-            algoMenu.DropDownItems.Add("DFS Çalıştır", null, (s, e) => RunAlgorithm("DFS"));
-            algoMenu.DropDownItems.Add("Dijkstra Çalıştır", null, (s, e) => RunAlgorithm("Dijkstra"));
-            algoMenu.DropDownItems.Add("A* Çalıştır", null, (s, e) => RunAlgorithm("A*"));
+            algoMenu.DropDownItems.Add("Run BFS", null, (s, e) => RunAlgorithm("BFS"));
+            algoMenu.DropDownItems.Add("Run DFS", null, (s, e) => RunAlgorithm("DFS"));
+            algoMenu.DropDownItems.Add("Run Dijkstra", null, (s, e) => RunAlgorithm("Dijkstra"));
+            algoMenu.DropDownItems.Add("Run A*", null, (s, e) => RunAlgorithm("A*"));
             algoMenu.DropDownItems.Add(new ToolStripSeparator());
-            algoMenu.DropDownItems.Add("Welsh-Powell Renklendirme", null, (s, e) => RunAlgorithm("Welsh-Powell"));
-            algoMenu.DropDownItems.Add("Bağlı Bileşenler", null, (s, e) => RunAlgorithm("Connected Components"));
+            algoMenu.DropDownItems.Add("Welsh-Powell Coloring", null, (s, e) => RunAlgorithm("Welsh-Powell"));
+            algoMenu.DropDownItems.Add("Connected Components", null, (s, e) => RunAlgorithm("Connected Components"));
             algoMenu.DropDownItems.Add("Degree Centrality", null, (s, e) => RunAlgorithm("Degree Centrality"));
             // Dropdown öğelerini siyah yap
             foreach (ToolStripItem item in algoMenu.DropDownItems)
                 item.ForeColor = Color.Black;
 
-            // Yardım Menüsü
-            var helpMenu = new ToolStripMenuItem("Yardım");
+            // Help Menu
+            var helpMenu = new ToolStripMenuItem("Help");
             helpMenu.ForeColor = Color.White;
-            helpMenu.DropDownItems.Add("Hakkında", null, ShowAbout);
+            helpMenu.DropDownItems.Add("About", null, ShowAbout);
             // Dropdown öğelerini siyah yap
             foreach (ToolStripItem item in helpMenu.DropDownItems)
                 item.ForeColor = Color.Black;
@@ -174,13 +174,13 @@ namespace SNA.GraphAlgorithms.App
 
             int y = 40;
 
-            // Başlık
-            var titleLabel = CreateLabel("⚡ ALGORİTMA KONTROLÜ", 10, y, 260, true);
+            // Header
+            var titleLabel = CreateLabel("⚡ ALGORITHM CONTROL", 10, y, 260, true);
             controlPanel.Controls.Add(titleLabel);
             y += 40;
 
-            // Algoritma seçimi
-            controlPanel.Controls.Add(CreateLabel("Algoritma:", 10, y, 260));
+            // Algorithm selection
+            controlPanel.Controls.Add(CreateLabel("Algorithm:", 10, y, 260));
             y += 25;
 
             algorithmComboBox = new ComboBox
@@ -193,20 +193,20 @@ namespace SNA.GraphAlgorithms.App
                 FlatStyle = FlatStyle.Flat
             };
             algorithmComboBox.Items.AddRange(new object[] {
-                "BFS (Genişlik Öncelikli)",
-                "DFS (Derinlik Öncelikli)",
-                "Dijkstra (En Kısa Yol)",
-                "A* (Hedefli Yol Bulma)",
-                "Welsh-Powell (Renklendirme)",
-                "Bağlı Bileşenler",
-                "Degree Centrality (En Etkili 5)"
+                "BFS (Breadth-First)",
+                "DFS (Depth-First)",
+                "Dijkstra (Shortest Path)",
+                "A* (Heuristic Pathfinding)",
+                "Welsh-Powell (Coloring)",
+                "Connected Components",
+                "Degree Centrality (Top 5)"
             });
             algorithmComboBox.SelectedIndex = 0;
             controlPanel.Controls.Add(algorithmComboBox);
             y += 40;
 
-            // Başlangıç düğümü
-            controlPanel.Controls.Add(CreateLabel("Başlangıç Düğümü:", 10, y, 260));
+            // Start node
+            controlPanel.Controls.Add(CreateLabel("Start Node:", 10, y, 260));
             y += 25;
 
             startNodeComboBox = new ComboBox
@@ -220,8 +220,8 @@ namespace SNA.GraphAlgorithms.App
             controlPanel.Controls.Add(startNodeComboBox);
             y += 40;
 
-            // Hedef düğümü (A* için)
-            controlPanel.Controls.Add(CreateLabel("Hedef Düğümü (A* için):", 10, y, 260));
+            // End node (for A*)
+            controlPanel.Controls.Add(CreateLabel("Target Node (for A*):", 10, y, 260));
             y += 25;
 
             endNodeComboBox = new ComboBox
@@ -238,7 +238,7 @@ namespace SNA.GraphAlgorithms.App
             // Çalıştır butonu
             runAlgorithmButton = new Button
             {
-                Text = "▶ ALGORİTMAYI ÇALIŞTIR",
+                Text = "▶ RUN ALGORITHM",
                 Location = new Point(10, y),
                 Size = new Size(260, 45),
                 BackColor = Color.FromArgb(0, 200, 150),
@@ -262,8 +262,8 @@ namespace SNA.GraphAlgorithms.App
             controlPanel.Controls.Add(separator);
             y += 20;
 
-            // Graf İstatistikleri
-            controlPanel.Controls.Add(CreateLabel("📊 GRAF İSTATİSTİKLERİ", 10, y, 260, true));
+            // Graph Stats
+            controlPanel.Controls.Add(CreateLabel("📊 GRAPH STATISTICS", 10, y, 260, true));
             y += 30;
 
             infoTextBox = new RichTextBox
@@ -279,12 +279,12 @@ namespace SNA.GraphAlgorithms.App
             controlPanel.Controls.Add(infoTextBox);
             y += 220;
 
-            // Hızlı Butonlar
-            var btnClear = CreateButton("🗑 Temizle", 10, y, 125, Color.FromArgb(255, 107, 129));
+            // Quick Buttons
+            var btnClear = CreateButton("🗑 Clear", 10, y, 125, Color.FromArgb(255, 107, 129));
             btnClear.Click += (s, e) => ClearHighlights();
             controlPanel.Controls.Add(btnClear);
 
-            var btnRefresh = CreateButton("🔄 Yenile", 145, y, 125, Color.FromArgb(100, 149, 237));
+            var btnRefresh = CreateButton("🔄 Refresh", 145, y, 125, Color.FromArgb(100, 149, 237));
             btnRefresh.Click += (s, e) => RefreshUI();
             controlPanel.Controls.Add(btnRefresh);
 
@@ -320,8 +320,8 @@ namespace SNA.GraphAlgorithms.App
 
             int y = 40;
 
-            // Sonuçlar Başlığı
-            var resultsTitle = CreateLabel("📋 ALGORİTMA SONUÇLARI", 10, y, 300, true);
+            // Results Header
+            var resultsTitle = CreateLabel("📋 ALGORITHM RESULTS", 10, y, 300, true);
             resultsPanel.Controls.Add(resultsTitle);
             y += 40;
 
@@ -339,8 +339,8 @@ namespace SNA.GraphAlgorithms.App
             resultsPanel.Controls.Add(resultListBox);
             y += 520;
 
-            // Sonuç bilgi etiketi
-            var resultInfoLabel = CreateLabel("Bir algoritma çalıştırın veya düğüme tıklayın", 10, y, 300);
+            // Result info label
+            var resultInfoLabel = CreateLabel("Run an algorithm or click a node", 10, y, 300);
             resultInfoLabel.ForeColor = Color.FromArgb(149, 165, 166);
             resultsPanel.Controls.Add(resultInfoLabel);
 
@@ -356,7 +356,7 @@ namespace SNA.GraphAlgorithms.App
 
             statusLabel = new ToolStripStatusLabel
             {
-                Text = "Hazır | Graf yüklemek için Dosya > CSV Yükle menüsünü kullanın",
+                Text = "Ready | Use File > Load CSV to import a graph",
                 ForeColor = Color.FromArgb(236, 240, 241)
             };
 
@@ -414,7 +414,7 @@ namespace SNA.GraphAlgorithms.App
 
         private void DrawEmptyMessage(Graphics g)
         {
-            string message = "Graf boş\n\nDosya > CSV Yükle veya Graf > Örnek Veri Yükle\nmenülerini kullanarak graf oluşturun";
+            string message = "Graph is empty\n\nUse File > Load CSV or Graph > Load Sample Data\nto start analysis";
             var font = new Font("Segoe UI", 14);
             var brush = new SolidBrush(Color.FromArgb(149, 165, 166));
             var size = g.MeasureString(message, font);
@@ -453,7 +453,7 @@ namespace SNA.GraphAlgorithms.App
                     g.DrawLine(pen, fromPos, toPos);
                 }
 
-                // Ağırlık etiketi
+                // Weight label
                 if (edge.Weight < 1)
                 {
                     var midPoint = new PointF((fromPos.X + toPos.X) / 2, (fromPos.Y + toPos.Y) / 2);
@@ -672,7 +672,7 @@ namespace SNA.GraphAlgorithms.App
         {
             if (graph.Nodes.Count == 0)
             {
-                MessageBox.Show("Graf boş! Önce veri yükleyin.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Graph is empty! Please load data first.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -743,10 +743,10 @@ namespace SNA.GraphAlgorithms.App
             var bfs = new BFS();
             var result = bfs.Execute(graph, startId);
 
-            resultListBox.Items.Add("=== BFS Sonuçları ===");
-            resultListBox.Items.Add($"Başlangıç: {graph.GetNode(startId)?.Name} (ID:{startId})");
+            resultListBox.Items.Add("=== BFS Results ===");
+            resultListBox.Items.Add($"Start: {graph.GetNode(startId)?.Name} (ID:{startId})");
             resultListBox.Items.Add("");
-            resultListBox.Items.Add("Ziyaret Sırası:");
+            resultListBox.Items.Add("Visit Order:");
 
             foreach (int nodeId in result)
             {
@@ -756,7 +756,7 @@ namespace SNA.GraphAlgorithms.App
 
             highlightedPath = result;
             highlightedNodes = result;
-            UpdateStatus($"BFS tamamlandı. {result.Count} düğüm ziyaret edildi.");
+            UpdateStatus($"BFS completed. {result.Count} nodes visited.");
         }
 
         private void RunDFS(int startId)
@@ -764,10 +764,10 @@ namespace SNA.GraphAlgorithms.App
             var dfs = new DFS();
             var result = dfs.Execute(graph, startId);
 
-            resultListBox.Items.Add("=== DFS Sonuçları ===");
-            resultListBox.Items.Add($"Başlangıç: {graph.GetNode(startId)?.Name} (ID:{startId})");
+            resultListBox.Items.Add("=== DFS Results ===");
+            resultListBox.Items.Add($"Start: {graph.GetNode(startId)?.Name} (ID:{startId})");
             resultListBox.Items.Add("");
-            resultListBox.Items.Add("Ziyaret Sırası:");
+            resultListBox.Items.Add("Visit Order:");
 
             foreach (int nodeId in result)
             {
@@ -777,7 +777,7 @@ namespace SNA.GraphAlgorithms.App
 
             highlightedPath = result;
             highlightedNodes = result;
-            UpdateStatus($"DFS tamamlandı. {result.Count} düğüm ziyaret edildi.");
+            UpdateStatus($"DFS completed. {result.Count} nodes visited.");
         }
 
         private void RunDijkstra(int startId)
@@ -785,10 +785,10 @@ namespace SNA.GraphAlgorithms.App
             var dijkstra = new Dijkstra();
             dijkstra.Execute(graph, startId);
 
-            resultListBox.Items.Add("=== Dijkstra Sonuçları ===");
-            resultListBox.Items.Add($"Başlangıç: {graph.GetNode(startId)?.Name} (ID:{startId})");
+            resultListBox.Items.Add("=== Dijkstra Results ===");
+            resultListBox.Items.Add($"Start: {graph.GetNode(startId)?.Name} (ID:{startId})");
             resultListBox.Items.Add("");
-            resultListBox.Items.Add("Mesafeler:");
+            resultListBox.Items.Add("Distances:");
 
             foreach (var node in graph.Nodes.OrderBy(n => n.Id))
             {
@@ -801,13 +801,13 @@ namespace SNA.GraphAlgorithms.App
             var path = dijkstra.GetShortestPath(endId);
 
             resultListBox.Items.Add("");
-            resultListBox.Items.Add($"En Kısa Yol ({graph.GetNode(startId)?.Name} -> {graph.GetNode(endId)?.Name}):");
+            resultListBox.Items.Add($"Shortest Path ({graph.GetNode(startId)?.Name} -> {graph.GetNode(endId)?.Name}):");
             resultListBox.Items.Add($"  {string.Join(" -> ", path.Select(id => graph.GetNode(id)?.Name))}");
-            resultListBox.Items.Add($"  Maliyet: {dijkstra.GetDistance(endId):F4}");
+            resultListBox.Items.Add($"  Cost: {dijkstra.GetDistance(endId):F4}");
 
             highlightedPath = path;
             highlightedNodes = path;
-            UpdateStatus($"Dijkstra tamamlandı. En kısa yol uzunluğu: {path.Count}");
+            UpdateStatus($"Dijkstra completed. Shortest path length: {path.Count}");
         }
 
         private void RunAStar(int startId)
@@ -816,25 +816,25 @@ namespace SNA.GraphAlgorithms.App
             var aStar = new AStar();
             var path = aStar.FindPath(graph, startId, endId);
 
-            resultListBox.Items.Add("=== A* Sonuçları ===");
-            resultListBox.Items.Add($"Başlangıç: {graph.GetNode(startId)?.Name}");
-            resultListBox.Items.Add($"Hedef: {graph.GetNode(endId)?.Name}");
+            resultListBox.Items.Add("=== A* Results ===");
+            resultListBox.Items.Add($"Start: {graph.GetNode(startId)?.Name}");
+            resultListBox.Items.Add($"Target: {graph.GetNode(endId)?.Name}");
             resultListBox.Items.Add("");
 
             if (path.Count > 0)
             {
-                resultListBox.Items.Add("Bulunan Yol:");
+                resultListBox.Items.Add("Path Found:");
                 resultListBox.Items.Add($"  {string.Join(" -> ", path.Select(id => graph.GetNode(id)?.Name))}");
-                resultListBox.Items.Add($"  Maliyet: {aStar.GetCost(endId):F4}");
+                resultListBox.Items.Add($"  Cost: {aStar.GetCost(endId):F4}");
             }
             else
             {
-                resultListBox.Items.Add("Yol bulunamadı!");
+                resultListBox.Items.Add("Path not found!");
             }
 
             highlightedPath = path;
             highlightedNodes = path;
-            UpdateStatus($"A* tamamlandı. Yol uzunluğu: {path.Count}");
+            UpdateStatus($"A* completed. Path length: {path.Count}");
         }
 
         private void RunWelshPowell()
@@ -846,13 +846,13 @@ namespace SNA.GraphAlgorithms.App
             int chromaticNumber = welshPowell.GetChromaticNumber();
             var groups = welshPowell.GetColorGroups();
 
-            resultListBox.Items.Add("=== Welsh-Powell Renklendirme ===");
-            resultListBox.Items.Add($"Kromatik Sayı: {chromaticNumber}");
+            resultListBox.Items.Add("=== Welsh-Powell Coloring ===");
+            resultListBox.Items.Add($"Chromatic Number: {chromaticNumber}");
             resultListBox.Items.Add("");
 
             foreach (var group in groups.OrderBy(g => g.Key))
             {
-                resultListBox.Items.Add($"Renk {group.Key}:");
+                resultListBox.Items.Add($"Color {group.Key}:");
                 foreach (int nodeId in group.Value)
                 {
                     var node = graph.GetNode(nodeId);
@@ -860,7 +860,7 @@ namespace SNA.GraphAlgorithms.App
                 }
             }
 
-            // Renkleri uygula
+            // Apply colors
             nodeColors.Clear();
             foreach (var kvp in colors)
             {
@@ -868,7 +868,7 @@ namespace SNA.GraphAlgorithms.App
                 nodeColors[kvp.Key] = colorPalette[colorIndex];
             }
 
-            UpdateStatus($"Welsh-Powell tamamlandı. {chromaticNumber} renk kullanıldı.");
+            UpdateStatus($"Welsh-Powell completed. {chromaticNumber} colors used.");
         }
 
         private void RunConnectedComponents()
@@ -878,9 +878,9 @@ namespace SNA.GraphAlgorithms.App
 
             var components = cc.GetAllComponents();
 
-            resultListBox.Items.Add("=== Bağlı Bileşenler ===");
-            resultListBox.Items.Add($"Toplam Bileşen Sayısı: {cc.GetComponentCount()}");
-            resultListBox.Items.Add($"Graf Bağlı mı: {(cc.IsGraphConnected() ? "Evet" : "Hayır")}");
+            resultListBox.Items.Add("=== Connected Components ===");
+            resultListBox.Items.Add($"Total Components: {cc.GetComponentCount()}");
+            resultListBox.Items.Add($"Is Graph Connected: {(cc.IsGraphConnected() ? "Yes" : "No")}");
             resultListBox.Items.Add("");
 
             int colorIndex = 0;
@@ -889,7 +889,7 @@ namespace SNA.GraphAlgorithms.App
             for (int i = 0; i < components.Count; i++)
             {
                 var component = components[i];
-                resultListBox.Items.Add($"Bileşen {i + 1} ({component.Count} düğüm):");
+                resultListBox.Items.Add($"Component {i + 1} ({component.Count} nodes):");
 
                 foreach (int nodeId in component)
                 {
@@ -901,7 +901,7 @@ namespace SNA.GraphAlgorithms.App
                 resultListBox.Items.Add("");
             }
 
-            UpdateStatus($"Bağlı Bileşenler tamamlandı. {components.Count} bileşen bulundu.");
+            UpdateStatus($"Connected Components analysis completed. {components.Count} components found.");
         }
 
         private void RunDegreeCentrality()
@@ -912,10 +912,10 @@ namespace SNA.GraphAlgorithms.App
             var topNodes = dc.GetTopNodes(5);
 
             resultListBox.Items.Add("=== Degree Centrality ===");
-            resultListBox.Items.Add($"Ortalama Merkezilik: {dc.GetAverageCentrality():F4}");
-            resultListBox.Items.Add($"Graf Yoğunluğu: {dc.GetGraphDensity(graph):F4}");
+            resultListBox.Items.Add($"Average Centrality: {dc.GetAverageCentrality():F4}");
+            resultListBox.Items.Add($"Graph Density: {dc.GetGraphDensity(graph):F4}");
             resultListBox.Items.Add("");
-            resultListBox.Items.Add("En Etkili 5 Düğüm:");
+            resultListBox.Items.Add("Top 5 Influential Nodes:");
 
             highlightedNodes.Clear();
             foreach (var (nodeId, centrality, degree) in topNodes)
@@ -927,14 +927,14 @@ namespace SNA.GraphAlgorithms.App
             }
 
             resultListBox.Items.Add("");
-            resultListBox.Items.Add("Tüm Düğümler (sıralı):");
+            resultListBox.Items.Add("All Nodes (sorted):");
 
             foreach (var node in graph.Nodes.OrderByDescending(n => dc.GetCentrality(n.Id)))
             {
                 resultListBox.Items.Add($"  {node.Name}: {dc.GetCentrality(node.Id):F4} (degree: {dc.GetDegree(node.Id)})");
             }
 
-            UpdateStatus($"Degree Centrality tamamlandı. En etkili: {graph.GetNode(topNodes[0].NodeId)?.Name}");
+            UpdateStatus($"Degree Centrality analysis completed. Top node: {graph.GetNode(topNodes[0].NodeId)?.Name}");
         }
 
         // ========== YARDIMCI METODLAR ==========
@@ -942,15 +942,15 @@ namespace SNA.GraphAlgorithms.App
         private void ShowNodeDetails(Node node)
         {
             resultListBox.Items.Clear();
-            resultListBox.Items.Add($"=== Düğüm Detayları ===");
+            resultListBox.Items.Add($"=== Node Details ===");
             resultListBox.Items.Add($"ID: {node.Id}");
-            resultListBox.Items.Add($"İsim: {node.Name}");
-            resultListBox.Items.Add($"Aktivite: {node.Activity}");
-            resultListBox.Items.Add($"Etkileşim: {node.InteractionCount}");
-            resultListBox.Items.Add($"Bağlantı Sayısı: {node.ConnectionCount}");
+            resultListBox.Items.Add($"Name: {node.Name}");
+            resultListBox.Items.Add($"Activity: {node.Activity}");
+            resultListBox.Items.Add($"Interactions: {node.InteractionCount}");
+            resultListBox.Items.Add($"Connection Count: {node.ConnectionCount}");
             resultListBox.Items.Add($"Degree: {node.Neighbors.Count}");
             resultListBox.Items.Add("");
-            resultListBox.Items.Add("Komşular:");
+            resultListBox.Items.Add("Neighbors:");
 
             foreach (int neighborId in node.Neighbors)
             {
@@ -965,23 +965,23 @@ namespace SNA.GraphAlgorithms.App
         {
             graph = new Graph();
 
-            // Örnek veriler
+            // Sample data
             var nodes = new[]
             {
-                new Node { Id = 1, Name = "Ali", Activity = 8.5, InteractionCount = 120, ConnectionCount = 15 },
-                new Node { Id = 2, Name = "Ayşe", Activity = 7.2, InteractionCount = 95, ConnectionCount = 12 },
-                new Node { Id = 3, Name = "Mehmet", Activity = 9.0, InteractionCount = 150, ConnectionCount = 18 },
-                new Node { Id = 4, Name = "Fatma", Activity = 6.8, InteractionCount = 80, ConnectionCount = 10 },
-                new Node { Id = 5, Name = "Ahmet", Activity = 7.5, InteractionCount = 110, ConnectionCount = 14 },
-                new Node { Id = 6, Name = "Zeynep", Activity = 8.2, InteractionCount = 130, ConnectionCount = 16 },
-                new Node { Id = 7, Name = "Mustafa", Activity = 6.5, InteractionCount = 75, ConnectionCount = 9 },
-                new Node { Id = 8, Name = "Elif", Activity = 9.5, InteractionCount = 160, ConnectionCount = 20 }
+                new Node { Id = 1, Name = "User A", Activity = 8.5, InteractionCount = 120, ConnectionCount = 15 },
+                new Node { Id = 2, Name = "User B", Activity = 7.2, InteractionCount = 95, ConnectionCount = 12 },
+                new Node { Id = 3, Name = "User C", Activity = 9.0, InteractionCount = 150, ConnectionCount = 18 },
+                new Node { Id = 4, Name = "User D", Activity = 6.8, InteractionCount = 80, ConnectionCount = 10 },
+                new Node { Id = 5, Name = "User E", Activity = 7.5, InteractionCount = 110, ConnectionCount = 14 },
+                new Node { Id = 6, Name = "User F", Activity = 8.2, InteractionCount = 130, ConnectionCount = 16 },
+                new Node { Id = 7, Name = "User G", Activity = 6.5, InteractionCount = 75, ConnectionCount = 9 },
+                new Node { Id = 8, Name = "User H", Activity = 9.5, InteractionCount = 160, ConnectionCount = 20 }
             };
 
             foreach (var node in nodes)
                 graph.AddNode(node);
 
-            // Kenar bağlantıları
+            // Edge connections
             graph.AddEdge(1, 2);
             graph.AddEdge(1, 3);
             graph.AddEdge(2, 4);
@@ -995,7 +995,7 @@ namespace SNA.GraphAlgorithms.App
             graph.AddEdge(7, 8);
 
             RefreshUI();
-            UpdateStatus("Örnek veri yüklendi. 8 düğüm, 11 kenar.");
+            UpdateStatus("Sample data loaded. 8 nodes, 11 edges.");
         }
 
         private void RefreshUI()
@@ -1032,11 +1032,11 @@ namespace SNA.GraphAlgorithms.App
             var stats = graph.GetStatistics();
 
             infoTextBox.Clear();
-            infoTextBox.AppendText($"Düğüm Sayısı: {stats.NodeCount}\n");
-            infoTextBox.AppendText($"Kenar Sayısı: {stats.EdgeCount}\n");
-            infoTextBox.AppendText($"Yoğunluk: {stats.Density:F4}\n");
-            infoTextBox.AppendText($"Ort. Degree: {stats.AvgDegree:F2}\n");
-            infoTextBox.AppendText($"\n--- Düğümler ---\n");
+            infoTextBox.AppendText($"Nodes: {stats.NodeCount}\n");
+            infoTextBox.AppendText($"Edges: {stats.EdgeCount}\n");
+            infoTextBox.AppendText($"Density: {stats.Density:F4}\n");
+            infoTextBox.AppendText($"Avg. Degree: {stats.AvgDegree:F2}\n");
+            infoTextBox.AppendText($"\n--- Nodes ---\n");
 
             foreach (var node in graph.Nodes.OrderBy(n => n.Id))
             {
@@ -1058,7 +1058,7 @@ namespace SNA.GraphAlgorithms.App
             ClearHighlights();
             resultListBox.Items.Clear();
             RefreshUI();
-            UpdateStatus("Graf temizlendi.");
+            UpdateStatus("Graph cleared.");
         }
 
         private void UpdateStatus(string message)
@@ -1072,8 +1072,8 @@ namespace SNA.GraphAlgorithms.App
         {
             using var dialog = new OpenFileDialog
             {
-                Filter = "CSV Dosyaları|*.csv|Tüm Dosyalar|*.*",
-                Title = "CSV Dosyası Seç"
+                Filter = "CSV Files|*.csv|All Files|*.*",
+                Title = "Select CSV File"
             };
 
             if (dialog.ShowDialog() == DialogResult.OK)
@@ -1082,11 +1082,11 @@ namespace SNA.GraphAlgorithms.App
                 {
                     graph = csvLoader.LoadGraph(dialog.FileName, createFullyConnected: true);
                     RefreshUI();
-                    UpdateStatus($"CSV yüklendi: {graph.Nodes.Count} düğüm, {graph.Edges.Count / 2} kenar");
+                    UpdateStatus($"CSV Loaded: {graph.Nodes.Count} nodes, {graph.Edges.Count / 2} edges");
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"CSV yükleme hatası: {ex.Message}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show($"CSV load error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
@@ -1095,8 +1095,8 @@ namespace SNA.GraphAlgorithms.App
         {
             using var dialog = new SaveFileDialog
             {
-                Filter = "JSON Dosyaları|*.json",
-                Title = "JSON Olarak Kaydet"
+                Filter = "JSON Files|*.json",
+                Title = "Save as JSON"
             };
 
             if (dialog.ShowDialog() == DialogResult.OK)
@@ -1104,7 +1104,7 @@ namespace SNA.GraphAlgorithms.App
                 try
                 {
                     graphExporter.ExportToJson(graph, dialog.FileName);
-                    UpdateStatus($"JSON kaydedildi: {dialog.FileName}");
+                    UpdateStatus($"JSON saved: {dialog.FileName}");
                 }
                 catch (Exception ex)
                 {
@@ -1117,8 +1117,8 @@ namespace SNA.GraphAlgorithms.App
         {
             using var dialog = new SaveFileDialog
             {
-                Filter = "CSV Dosyaları|*.csv",
-                Title = "CSV Olarak Kaydet"
+                Filter = "CSV Files|*.csv",
+                Title = "Save as CSV"
             };
 
             if (dialog.ShowDialog() == DialogResult.OK)
@@ -1126,7 +1126,7 @@ namespace SNA.GraphAlgorithms.App
                 try
                 {
                     graphExporter.ExportNodesToCsv(graph, dialog.FileName);
-                    UpdateStatus($"CSV kaydedildi: {dialog.FileName}");
+                    UpdateStatus($"CSV saved: {dialog.FileName}");
                 }
                 catch (Exception ex)
                 {
@@ -1139,7 +1139,7 @@ namespace SNA.GraphAlgorithms.App
         {
             using var dialog = new FolderBrowserDialog
             {
-                Description = "Dışa Aktarma Klasörü Seçin"
+                Description = "Select Export Folder"
             };
 
             if (dialog.ShowDialog() == DialogResult.OK)
@@ -1147,8 +1147,8 @@ namespace SNA.GraphAlgorithms.App
                 try
                 {
                     graphExporter.ExportAll(graph, dialog.SelectedPath);
-                    UpdateStatus($"Tüm dosyalar kaydedildi: {dialog.SelectedPath}");
-                    MessageBox.Show($"Dosyalar başarıyla dışa aktarıldı:\n{dialog.SelectedPath}", "Başarılı", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    UpdateStatus($"All files saved: {dialog.SelectedPath}");
+                    MessageBox.Show($"Files exported successfully to:\n{dialog.SelectedPath}", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 catch (Exception ex)
                 {
@@ -1160,9 +1160,9 @@ namespace SNA.GraphAlgorithms.App
         private void AddNodeClick(object sender, EventArgs e)
         {
             string input = Microsoft.VisualBasic.Interaction.InputBox(
-                "Yeni düğüm bilgilerini girin:\nFormat: İsim,Aktivite,Etkileşim,Bağlantı\nÖrnek: Yeni,7.5,100,12",
-                "Düğüm Ekle",
-                "Yeni,7.5,100,12");
+                "Enter new node details:\nFormat: Name,Activity,Interactions,Connections\nExample: NewUser,7.5,100,12",
+                "Add Node",
+                "NewUser,7.5,100,12");
 
             if (!string.IsNullOrEmpty(input))
             {
@@ -1182,7 +1182,7 @@ namespace SNA.GraphAlgorithms.App
 
                     graph.AddNode(node);
                     RefreshUI();
-                    UpdateStatus($"Düğüm eklendi: {node.Name} (ID:{node.Id})");
+                    UpdateStatus($"Node added: {node.Name} (ID:{node.Id})");
                 }
                 catch (Exception ex)
                 {
@@ -1194,8 +1194,8 @@ namespace SNA.GraphAlgorithms.App
         private void AddEdgeClick(object sender, EventArgs e)
         {
             string input = Microsoft.VisualBasic.Interaction.InputBox(
-                "Kenar bilgilerini girin:\nFormat: KaynakID,HedefID\nÖrnek: 1,2",
-                "Kenar Ekle",
+                "Enter edge details:\nFormat: FromID,ToID\nExample: 1,2",
+                "Add Edge",
                 "1,2");
 
             if (!string.IsNullOrEmpty(input))
@@ -1208,7 +1208,7 @@ namespace SNA.GraphAlgorithms.App
 
                     graph.AddEdge(fromId, toId);
                     RefreshUI();
-                    UpdateStatus($"Kenar eklendi: {fromId} <-> {toId}");
+                    UpdateStatus($"Edge added: {fromId} <-> {toId}");
                 }
                 catch (Exception ex)
                 {
@@ -1220,19 +1220,17 @@ namespace SNA.GraphAlgorithms.App
         private void ShowAbout(object sender, EventArgs e)
         {
             MessageBox.Show(
-                "SNA Graph Algorithms\n\n" +
-                "Sosyal Ağ Analizi - Graf Algoritmaları Projesi\n\n" +
-                "Kocaeli Üniversitesi\n" +
-                "Yazılım Geliştirme Laboratuvarı-I\n\n" +
-                "Algoritmalar:\n" +
+                "SNA Graph Algorithms Dashboard\n\n" +
+                "Social Network Analysis - Graph Algorithms Toolkit\n\n" +
+                "Implementation includes:\n" +
                 "• BFS (Breadth-First Search)\n" +
                 "• DFS (Depth-First Search)\n" +
-                "• Dijkstra (En Kısa Yol)\n" +
-                "• A* (Hedefli Yol Bulma)\n" +
-                "• Welsh-Powell (Graf Renklendirme)\n" +
-                "• Bağlı Bileşenler\n" +
+                "• Dijkstra (Shortest Path)\n" +
+                "• A* (Heuristic Pathfinding)\n" +
+                "• Welsh-Powell (Graph Coloring)\n" +
+                "• Connected Components\n" +
                 "• Degree Centrality",
-                "Hakkında",
+                "About",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
         }
@@ -1291,7 +1289,7 @@ namespace SNA.GraphAlgorithms.App
                 }
 
                 RefreshUI();
-                UpdateStatus("Önceki oturumdan graf yüklendi.");
+                UpdateStatus("Graph loaded from previous session.");
                 return true;
             }
             catch (Exception ex)

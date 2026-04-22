@@ -9,16 +9,16 @@ using System.Linq;
 namespace SNA.GraphAlgorithms.Infrastructure.FileServices
 {
     
-    /// Graf verilerini farklı formatlarda dışa aktarır
-    /// JSON, CSV ve Adjacency Matrix formatlarını destekler
+    /// Exports graph data in various formats
+    /// Supports JSON, CSV, and Adjacency Matrix formats
     
     public class GraphExporter
     {
         
-        /// Grafı JSON formatında dışa aktarır
+        /// Exports the graph in JSON format
         
-        /// <param name="graph">Dışa aktarılacak graf</param>
-        /// <param name="filePath">Hedef dosya yolu</param>
+        /// <param name="graph">Graph to be exported</param>
+        /// <param name="filePath">Target file path</param>
         public void ExportToJson(Graph graph, string filePath)
         {
             if (graph == null)
@@ -40,7 +40,7 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
                     n.Neighbors
                 }).ToList(),
                 Edges = graph.Edges
-                    .Where(e => e.FromNodeId < e.ToNodeId) // Duplicate'leri önle (undirected)
+                    .Where(e => e.FromNodeId < e.ToNodeId) // Prevent duplicates (undirected)
                     .Select(e => new
                     {
                         e.FromNodeId,
@@ -66,7 +66,7 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
         }
 
         
-        /// Graf düğümlerini CSV formatında dışa aktarır
+        /// Exports graph nodes in CSV format
         
         public void ExportNodesToCsv(Graph graph, string filePath)
         {
@@ -87,7 +87,7 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
         }
 
         
-        /// Graf kenarlarını CSV formatında dışa aktarır
+        /// Exports graph edges in CSV format
         
         public void ExportEdgesToCsv(Graph graph, string filePath)
         {
@@ -99,7 +99,7 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
             var sb = new StringBuilder();
             sb.AppendLine("FromNodeId,ToNodeId,Weight,FromNodeName,ToNodeName");
 
-            // Duplicate edge'leri önle (sadece FromNodeId < ToNodeId olanları yaz)
+            // Prevent duplicate edges (weighted undirected graph)
             var writtenEdges = new HashSet<string>();
             foreach (var edge in graph.Edges)
             {
@@ -117,7 +117,7 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
         }
 
         
-        /// Komşuluk listesini (Adjacency List) text formatında dışa aktarır
+        /// Exports Adjacency List in text format
         
         public void ExportAdjacencyList(Graph graph, string filePath)
         {
@@ -148,7 +148,7 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
         }
 
         /
-        /// Komşuluk matrisini (Adjacency Matrix) dışa aktarır
+        /// Exports Adjacency Matrix in text format
         
         public void ExportAdjacencyMatrix(Graph graph, string filePath)
         {
@@ -193,7 +193,7 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
         }
 
         
-        /// Komşuluk matrisini CSV formatında dışa aktarır
+        /// Exports Adjacency Matrix in CSV format
         
         public void ExportAdjacencyMatrixCsv(Graph graph, string filePath)
         {
@@ -225,7 +225,7 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
         }
 
         
-        /// Tüm verileri tek bir klasöre dışa aktarır
+        /// Exports all graph data to a single directory
         
         public void ExportAll(Graph graph, string directoryPath)
         {
@@ -243,7 +243,7 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
         }
 
         
-        /// Grafın komşuluk matrisini hesaplar
+        /// Calculates the graph's Adjacency Matrix
         
         public double[,] GetAdjacencyMatrix(Graph graph)
         {
@@ -271,7 +271,7 @@ namespace SNA.GraphAlgorithms.Infrastructure.FileServices
         }
 
         
-        /// CSV için string escape işlemi
+        /// CSV string escaping logic
         
         private string EscapeCsv(string value)
         {
